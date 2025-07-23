@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 const uploadLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10, // 10 uploads/reqs per ip every 5 mins
+  max: 10, // 10 uploads/reqs per ip per 5 mins
   message: 'Too many upload attempts, please try again later'
 });
 
@@ -41,9 +41,10 @@ const ALLOWED_MIME_TYPES = [
   ...parseMimeTypes(config.docMimetypes)
 ];
 
+// Folder Mapping
 const FOLDER_MAP = {
-  images: parseMimeTypes(config.imageMimetypes),
-  videos: parseMimeTypes(config.videoMimetypes),
+  image: parseMimeTypes(config.imageMimetypes),
+  video: parseMimeTypes(config.videoMimetypes),
   audio: parseMimeTypes(config.audioMimetypes),
   docs: parseMimeTypes(config.docMimetypes)
 };
@@ -175,7 +176,7 @@ app.post('/giftedUpload.php', uploadLimiter, upload.single('file'), verifyTurnst
 });
 
 
-// API ENDPOINT CAN BE USED IN BOTS AND OUTSIDE APP
+// API ENDPOINT FOR EXTERNAL INTEGRATION
 app.post('/api/upload.php', uploadLimiter, upload.single('file'), validateFile, async (req, res) => {
   const folder = getFolderForContentType(req.file.mimetype);
   await uploadToGitHub(req.file, folder, res, false);
