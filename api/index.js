@@ -13,7 +13,7 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 const uploadLimiter = rateLimit({
   windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10, // 10 uploads/reqs per ip per 5 mins
+  max: 10, // 10 uploads/reqs per ip every 5 mins
   message: 'Too many upload attempts, please try again later'
 });
 
