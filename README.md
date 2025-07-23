@@ -1,7 +1,7 @@
 ### TO DO:
 
 - File Name formatting (cleaning) ✅
-- Add file uploads to folder as per file type ✅
+- Add file uploads to folder as per file type ✅ (auto creates folder during upload if you do not manually do so) 
 - Add database for safe file deletion by key as in **[GIFTED CDN](https://github.com/mauricegift/gifted-cdn)**
 
   - Here is the **[LIVE APP](https://ghbcdn.giftedtech.co.ke)**
