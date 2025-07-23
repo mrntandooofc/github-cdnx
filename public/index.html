@@ -659,14 +659,17 @@
       const icon = themeToggle.querySelector('i');
       icon.className = newTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
       
-      // Update Turnstile theme
+      // Update Turnstile theme without re-rendering
       if (window.turnstile) {
         turnstileWidgets.forEach(widget => {
-          window.turnstile.render(widget.container, {
-            sitekey: widget.sitekey,
-            theme: newTheme,
-            callback: onTurnstileSuccess
-          });
+          const iframe = widget.container.querySelector('iframe');
+          if (iframe) {
+            iframe.contentWindow.postMessage({
+              event: 'turnstile.theme',
+              theme: newTheme,
+              widgetId: widget.id
+            }, 'https://challenges.cloudflare.com');
+          }
         });
       }
     }
@@ -773,11 +776,17 @@
         const sitekey = widgetContainer.getAttribute('data-sitekey');
         const theme = body.getAttribute('data-theme');
         
-        window.turnstile.render(widgetContainer, {
+        const widgetId = window.turnstile.render(widgetContainer, {
           sitekey: sitekey,
           theme: theme,
           callback: onTurnstileSuccess
         });
+        
+        // Update the widget reference
+        const widgetIndex = turnstileWidgets.findIndex(w => w.container === widgetContainer);
+        if (widgetIndex !== -1) {
+          turnstileWidgets[widgetIndex].id = widgetId;
+        }
       }
     }
 
@@ -977,10 +986,20 @@
         const sitekey = container.getAttribute('data-sitekey');
         const theme = body.getAttribute('data-theme');
         
-        turnstileWidgets.push({
-          container: container,
-          sitekey: sitekey
-        });
+        // Only render if not already rendered
+        if (!container.hasChildNodes()) {
+          const widgetId = window.turnstile?.render(container, {
+            sitekey: sitekey,
+            theme: theme,
+            callback: onTurnstileSuccess
+          });
+          
+          turnstileWidgets.push({
+            container: container,
+            sitekey: sitekey,
+            id: widgetId
+          });
+        }
       });
       
       setTimeout(() => {
