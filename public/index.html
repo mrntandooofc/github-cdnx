@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="description" content="GitHub File Manager - Modern interface for managing files on GitHub">
   <title>GITHUB CDN</title>
   <link rel="icon" href="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg">
@@ -54,11 +54,12 @@
       position: fixed;
       height: 100vh;
       transition: all 0.3s ease;
-      z-index: 100;
+      z-index: 1000;
       border-top-right-radius: 20px;
       border-bottom-right-radius: 20px;
       transform: translateX(-100%);
       box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      overflow-y: auto;
     }
 
     .sidebar.active {
@@ -78,6 +79,7 @@
       color: var(--gray);
       font-size: 1.5rem;
       cursor: pointer;
+      display: none;
     }
 
     .logo-container {
@@ -138,6 +140,7 @@
       transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
+      width: 100%;
     }
 
     /* Header */
@@ -148,6 +151,9 @@
       padding: 1rem 1.5rem;
       background-color: var(--dark-light);
       border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
     }
 
     .header-left {
@@ -162,6 +168,7 @@
       color: var(--light);
       font-size: 1.5rem;
       cursor: pointer;
+      display: none;
     }
 
     .header-logo {
@@ -193,20 +200,21 @@
 
     /* Content */
     .content {
-      padding: 2rem;
+      padding: 1.5rem;
       flex: 1;
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
     }
 
     /* Card */
     .card {
       background-color: var(--dark-light);
       border-radius: 1rem;
-      padding: 2rem;
+      padding: 1.5rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       margin-bottom: 2rem;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
+      width: 100%;
     }
 
     .card-title {
@@ -221,7 +229,7 @@
     .upload-area {
       border: 2px dashed var(--gray);
       border-radius: 1rem;
-      padding: 3rem 2rem;
+      padding: 2rem 1rem;
       text-align: center;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -233,7 +241,7 @@
     }
 
     .upload-area i {
-      font-size: 3rem;
+      font-size: 2.5rem;
       color: var(--primary);
       margin-bottom: 1rem;
     }
@@ -241,10 +249,12 @@
     .upload-area p {
       margin-bottom: 0.5rem;
       color: var(--light);
+      font-size: 1rem;
     }
 
     .upload-area small {
       color: var(--gray);
+      font-size: 0.875rem;
     }
 
     #file-input {
@@ -267,6 +277,7 @@
       font-weight: 500;
       margin-bottom: 0.25rem;
       color: var(--light);
+      word-break: break-all;
     }
 
     .file-size {
@@ -283,7 +294,8 @@
       font-weight: 500;
       cursor: pointer;
       transition: all 0.2s ease;
-      width: 200px;
+      width: 100%;
+      max-width: 200px;
       margin: 1rem auto 0;
       display: block;
     }
@@ -302,8 +314,7 @@
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      max-width: 500px;
-      margin: 0 auto;
+      width: 100%;
     }
 
     .form-group {
@@ -324,6 +335,7 @@
       padding: 0.75rem 1rem;
       color: var(--light);
       font-family: inherit;
+      width: 100%;
     }
 
     .form-input:focus {
@@ -337,9 +349,7 @@
       padding: 1.5rem;
       border-radius: 0.5rem;
       display: none;
-      max-width: 800px;
-      margin-left: auto;
-      margin-right: auto;
+      width: 100%;
     }
 
     .result.success {
@@ -383,12 +393,15 @@
     }
 
     /* Turnstile */
-    .cf-turnstile {
+    .cf-turnstile-container {
       margin: 1.5rem auto;
       display: flex;
       justify-content: center;
-      transform: scale(0.8);
-      transform-origin: top center;
+    }
+
+    .cf-turnstile {
+      transform: scale(0.9);
+      transform-origin: center;
     }
 
     /* Footer */
@@ -397,11 +410,13 @@
       padding: 1.5rem;
       background-color: var(--dark-light);
       border-top: 1px solid rgba(0, 0, 0, 0.1);
+      margin-top: auto;
     }
 
     .footer p {
       margin-bottom: 0.5rem;
       color: var(--gray);
+      font-size: 0.875rem;
     }
 
     .footer a {
@@ -420,21 +435,40 @@
       }
       .main-content {
         margin-left: 280px;
-      }
-      .menu-toggle {
-        display: none;
-      }
-      .sidebar-close {
-        display: none;
+        width: calc(100% - 280px);
       }
     }
 
-    @media (max-width: 768px) {
+    @media (max-width: 991px) {
+      .menu-toggle {
+        display: block;
+      }
+      .sidebar-close {
+        display: block;
+      }
+      .header-title {
+        font-size: 1.1rem;
+      }
+    }
+
+    @media (max-width: 576px) {
       .content {
-        padding: 1.5rem;
+        padding: 1rem;
       }
       .card {
-        padding: 1.5rem;
+        padding: 1rem;
+      }
+      .upload-area {
+        padding: 1.5rem 1rem;
+      }
+      .upload-area i {
+        font-size: 2rem;
+      }
+      .card-title {
+        font-size: 1.3rem;
+      }
+      .submit-btn {
+        width: 100%;
       }
     }
 
@@ -456,9 +490,31 @@
     .page.active {
       display: block;
     }
+
+    /* Overlay for mobile sidebar */
+    .sidebar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .sidebar-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
   </style>
 </head>
 <body data-theme="dark">
+  <!-- Sidebar Overlay -->
+  <div class="sidebar-overlay"></div>
+
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
@@ -513,14 +569,16 @@
           <div class="upload-area" id="upload-area">
             <i class="fas fa-file-upload"></i>
             <p>Drag & Drop your files here</p>
-            <small>or click to browse files (Max 50MBs)</small>
+            <small>or click to browse files (Max 50MB)</small>
             <input type="file" id="file-input" name="file">
           </div>
           <div class="file-info" id="file-info">
             <p class="file-name" id="file-name"></p>
             <p class="file-size" id="file-size"></p>
           </div>
-          <div class="cf-turnstile" data-sitekey="0x4AAAAAABAFw6YmZiCTI8D9" data-callback="onTurnstileSuccess"></div>
+          <div class="cf-turnstile-container">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAABAFw6YmZiCTI8D9" data-callback="onTurnstileSuccess" data-theme="dark"></div>
+          </div>
           <button class="submit-btn" id="submit-btn" disabled>Upload File</button>
         </div>
 
@@ -537,10 +595,12 @@
           <h2 class="card-title">Delete File</h2>
           <form class="delete-form" id="delete-form">
             <div class="form-group">
-              <label for="filename" class="form-label">File Name</label>
-              <input type="text" id="filename" class="form-input" placeholder="example.jpg" required>
+              <label for="filename" class="form-label">File Path</label>
+              <input type="text" id="filename" class="form-input" placeholder="image/example.jpg" required>
             </div>
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAABAFw6YmZiCTI8D9" data-callback="onTurnstileSuccess"></div>
+            <div class="cf-turnstile-container">
+              <div class="cf-turnstile" data-sitekey="0x4AAAAAABAFw6YmZiCTI8D9" data-callback="onTurnstileSuccess" data-theme="dark"></div>
+            </div>
             <button type="submit" class="submit-btn" id="delete-btn" disabled>Delete File</button>
           </form>
         </div>
@@ -553,7 +613,7 @@
     </div>
 
     <footer class="footer">
-      <p><i>Upload Upto 50MBs, NO Expiry</i></p>
+      <p><i>Upload Upto 50MB, NO Expiry</i></p>
       <p><b>NB:</b> <i>Supports Most File Types</i></p>
       <a href="https://www.giftedtech.web.id" class="text-blue-500 hover:underline">©2024-2025<b> Gifted Tech</b></a>
     </footer>
@@ -565,6 +625,7 @@
     const menuToggle = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
     const sidebarClose = document.querySelector('.sidebar-close');
+    const sidebarOverlay = document.querySelector('.sidebar-overlay');
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page');
 
@@ -587,6 +648,7 @@
     const deleteResultMsg = document.getElementById('delete-result-message');
 
     let turnstileResponse = null;
+    let turnstileWidgets = [];
 
     function toggleTheme() {
       const currentTheme = body.getAttribute('data-theme');
@@ -597,12 +659,11 @@
       const icon = themeToggle.querySelector('i');
       icon.className = newTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
       
+      // Update Turnstile theme
       if (window.turnstile) {
-        const widgets = document.querySelectorAll('.cf-turnstile');
-        widgets.forEach(widget => {
-          widget.innerHTML = '';
-          window.turnstile.render(widget, {
-            sitekey: '0x4AAAAAABAFw6YmZiCTI8D9',
+        turnstileWidgets.forEach(widget => {
+          window.turnstile.render(widget.container, {
+            sitekey: widget.sitekey,
             theme: newTheme,
             callback: onTurnstileSuccess
           });
@@ -616,26 +677,21 @@
       
       const icon = themeToggle.querySelector('i');
       icon.className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-      
-      if (window.turnstile) {
-        const widgets = document.querySelectorAll('.cf-turnstile');
-        widgets.forEach(widget => {
-          window.turnstile.render(widget, {
-            sitekey: '0x4AAAAAABAFw6YmZiCTI8D9',
-            theme: savedTheme,
-            callback: onTurnstileSuccess
-          });
-        });
-      }
     }
 
-    menuToggle.addEventListener('click', () => {
-      sidebar.classList.add('active');
-    });
+    function toggleSidebar() {
+      sidebar.classList.toggle('active');
+      sidebarOverlay.classList.toggle('active');
+    }
 
-    sidebarClose.addEventListener('click', () => {
+    function closeSidebar() {
       sidebar.classList.remove('active');
-    });
+      sidebarOverlay.classList.remove('active');
+    }
+
+    menuToggle.addEventListener('click', toggleSidebar);
+    sidebarClose.addEventListener('click', closeSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
 
     navLinks.forEach(link => {
       link.addEventListener('click', (e) => {
@@ -648,9 +704,7 @@
         pages.forEach(page => page.classList.remove('active'));
         document.getElementById(`${pageId}-page`).classList.add('active');
         
-        if (window.innerWidth < 992) {
-          sidebar.classList.remove('active');
-        }
+        closeSidebar();
       });
     });
 
@@ -665,11 +719,11 @@
         fileSize.textContent = `${fileSizeMB} MB`;
         fileInfo.classList.add('active');
         
-        if (file.size > 50 * 1024 * 1024) { // 50MB....already handled by backend though
+        if (file.size > 50 * 1024 * 1024) {
           submitBtn.disabled = true;
           Swal.fire({
             title: 'File Too Large',
-            text: 'Maximum file size is 100MB',
+            text: 'Maximum file size is 50MB',
             icon: 'error',
             background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
             color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
@@ -702,7 +756,7 @@
 
     function onTurnstileSuccess(token) {
       turnstileResponse = token;
-      submitBtn.disabled = !(fileInput.files.length && fileInput.files[0].size <= 100 * 1024 * 1024);
+      submitBtn.disabled = !(fileInput.files.length && fileInput.files[0].size <= 50 * 1024 * 1024);
       deleteBtn.disabled = false;
     }
 
@@ -710,15 +764,19 @@
       turnstileResponse = null;
       submitBtn.disabled = true;
       deleteBtn.disabled = true;
-      if (window.turnstile) {
-        const widgets = document.querySelectorAll('.cf-turnstile');
-        widgets.forEach(widget => {
-          widget.innerHTML = '';
-          window.turnstile.render(widget, {
-            sitekey: '0x4AAAAAABAFw6YmZiCTI8D9',
-            theme: body.getAttribute('data-theme'),
-            callback: onTurnstileSuccess
-          });
+      
+      // Only reset the current page's Turnstile widget
+      const currentPage = document.querySelector('.page.active');
+      const widgetContainer = currentPage.querySelector('.cf-turnstile');
+      if (widgetContainer && window.turnstile) {
+        widgetContainer.innerHTML = '';
+        const sitekey = widgetContainer.getAttribute('data-sitekey');
+        const theme = body.getAttribute('data-theme');
+        
+        window.turnstile.render(widgetContainer, {
+          sitekey: sitekey,
+          theme: theme,
+          callback: onTurnstileSuccess
         });
       }
     }
@@ -913,13 +971,25 @@
       setInitialTheme();
       themeToggle.addEventListener('click', toggleTheme);
       
+      // Initialize Turnstile widgets only once
+      const turnstileContainers = document.querySelectorAll('.cf-turnstile');
+      turnstileContainers.forEach(container => {
+        const sitekey = container.getAttribute('data-sitekey');
+        const theme = body.getAttribute('data-theme');
+        
+        turnstileWidgets.push({
+          container: container,
+          sitekey: sitekey
+        });
+      });
+      
       setTimeout(() => {
         document.querySelector('.card').classList.add('fade-in');
       }, 100);
       
       window.addEventListener('resize', () => {
         if (window.innerWidth >= 992) {
-          sidebar.classList.remove('active');
+          closeSidebar();
         }
       });
     });
