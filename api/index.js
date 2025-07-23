@@ -25,6 +25,40 @@ const upload = multer({
   }
 });
 
+function parseMimeTypes(mimeString) {
+  try {
+    return JSON.parse(mimeString.replace(/'/g, '"'));
+  } catch (e) {
+    console.error('Error parsing MIME types:', e);
+    return [];
+  }
+}
+
+const ALLOWED_MIME_TYPES = [
+  ...parseMimeTypes(config.imageMimetypes),
+  ...parseMimeTypes(config.videoMimetypes),
+  ...parseMimeTypes(config.audioMimetypes),
+  ...parseMimeTypes(config.docMimetypes)
+];
+
+const FOLDER_MAP = {
+  images: parseMimeTypes(config.imageMimetypes),
+  videos: parseMimeTypes(config.videoMimetypes),
+  audio: parseMimeTypes(config.audioMimetypes),
+  docs: parseMimeTypes(config.docMimetypes)
+};
+
+function getFolderForContentType(contentType) {
+  if (!contentType) return 'files';
+  contentType = contentType.toLowerCase();
+  for (const [folder, types] of Object.entries(FOLDER_MAP)) {
+    if (types.some(t => t.toLowerCase() === contentType)) {
+      return folder;
+    }
+  }
+  return 'docs';
+}
+
 function makeId() {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
@@ -39,130 +73,157 @@ function makeId() {
 }
 
 const verifyTurnstile = async (req, res, next) => {
-    const { turnstileResponse } = req.body;
+  const { turnstileResponse } = req.body;
 
-    if (!turnstileResponse) {
-        return res.status(400).json({ error: 'CAPTCHA Response is Required' });
+  if (!turnstileResponse) {
+    return res.status(400).json({ error: 'CAPTCHA Response is Required' });
+  }
+
+  try {
+    const response = await axios.post(
+      `${config.cfTurnstileApiUrl}/turnstile/v0/siteverify`,
+      new URLSearchParams({
+        secret: config.cfSecretKey,
+        response: turnstileResponse,
+      }),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      }
+    );
+
+    if (!response.data.success) {
+      return res.status(400).json({ error: 'CAPTCHA Already Used! Please Reload Page to Continue.' });
     }
 
-    try {
-        const response = await axios.post(
-            `${config.cfTurnstileApiUrl}/turnstile/v0/siteverify`,
-            new URLSearchParams({
-                secret: config.cfSecretKey,
-                response: turnstileResponse,
-            }),
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-            }
-        );
-
-        if (!response.data.success) {
-            return res.status(400).json({ error: 'CAPTCHA Already Used! Please Reload Page to Continue.' });
-        }
-
-        next(); 
-    } catch (error) {
-        console.error('Error verifying Turnstile response:', error);
-        res.status(500).json({ error: 'Internal Server Error', details: error.message });
-    }
+    next(); 
+  } catch (error) {
+    console.error('Error verifying Turnstile response:', error);
+    res.status(500).json({ error: 'Internal Server Error', details: error.message });
+  }
 };
 
-app.post('/giftedUpload.php', uploadLimiter, upload.single('file'), verifyTurnstile, async (req, res) => {
-    if (!req.file) {
-        return res.status(400).json({ success: false, error: 'No file uploaded' });
-    }
+const validateFile = (req, res, next) => {
+  if (!req.file) {
+    console.warn('No file uploaded');
+    return res.status(400).json({ error: 'No file uploaded' });
+  }
 
-    const fileName = `${makeId()}${req.file.originalname}`;
-    const fileContent = req.file.buffer.toString('base64');
+  if (!ALLOWED_MIME_TYPES.includes(req.file.mimetype)) {
+    console.warn(`File type not allowed: ${req.file.mimetype}`);
+    return res.status(400).json({ error: 'File type not allowed' });
+  }
+
+  next();
+};
+
+async function uploadToGitHub(file, folder, res, includeTurnstile = true) {
+  const originalFileName = `${makeId()}_${file.originalname}`;
+  const fileName = originalFileName
+    .replace(/\s+/g, '-')
+    .replace(/[^a-zA-Z0-9-._]/g, '');
+  const filePath = `${folder}/${fileName}`;
+  const fileContent = file.buffer.toString('base64');
+
+  try {
+    const apiUrl = `${config.githubApiUrl}/repos/${config.githubUser}/${config.githubRepo}/contents/${filePath}`;
+    const headers = {
+      'Authorization': `token ${config.githubToken}`,
+      'Content-Type': 'application/json'
+    };
 
     try {
-        const apiUrl = `${config.githubApiUrl}/repos/${config.githubUser}/${config.githubRepo}/contents/${fileName}`; 
-        const headers = {
-            'Authorization': `token ${config.githubToken}`,
-            'Content-Type': 'application/json'
-        };
-
-        try {
-            const existingFileResponse = await axios.get(apiUrl, { headers });
-            if (existingFileResponse.data) {
-                const rawUrl = `${config.cdnApiUrl}/${config.githubUser}/${config.githubRepo}@${config.repoBranch}/${fileName}`;
-                return res.json({ 
-                    success: true, 
-                    rawUrl: rawUrl,
-                    message: 'File already exists, returning existing URL'
-                });
-            }
-        } catch (error) {
-            if (error.response && error.response.status !== 404) {
-                throw error;
-            }
-        }
-
-        const data = {
-            message: config.commitMessage,
-            content: fileContent,
-            branch: config.repoBranch
-        };
-
-        await axios.put(apiUrl, data, { headers });
-
-        const rawUrl = `${config.cdnApiUrl}/${config.githubUser}/${config.githubRepo}@${config.repoBranch}/${fileName}`;
-        res.json({ 
-            success: true, 
-            rawUrl: rawUrl 
+      const existingFileResponse = await axios.get(apiUrl, { headers });
+      if (existingFileResponse.data) {
+        const rawUrl = `${config.cdnApiUrl}/${config.githubUser}/${config.githubRepo}@${config.repoBranch}/${filePath}`;
+        return res.json({ 
+          success: true, 
+          rawUrl: rawUrl,
+          message: 'File already exists, returning existing URL'
         });
-
+      }
     } catch (error) {
-        console.error('Error uploading file to GitHub:', error);
-        res.status(500).json({ success: false, error: error.message });
+      if (error.response && error.response.status !== 404) {
+        throw error;
+      }
     }
+
+    const data = {
+      message: config.commitMessage,
+      content: fileContent,
+      branch: config.repoBranch
+    };
+
+    await axios.put(apiUrl, data, { headers });
+
+    const rawUrl = `${config.cdnApiUrl}/${config.githubUser}/${config.githubRepo}@${config.repoBranch}/${filePath}`;
+    res.json({ 
+      success: true, 
+      rawUrl: rawUrl 
+    });
+
+  } catch (error) {
+    console.error('Error uploading file to GitHub:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+}
+
+app.post('/giftedUpload.php', uploadLimiter, upload.single('file'), verifyTurnstile, validateFile, async (req, res) => {
+  const folder = getFolderForContentType(req.file.mimetype);
+  await uploadToGitHub(req.file, folder, res, true);
 });
 
+
+// API ENDPOINT CAN BE USED IN BOTS AND OUTSIDE APP
+app.post('/api/upload.php', uploadLimiter, upload.single('file'), validateFile, async (req, res) => {
+  const folder = getFolderForContentType(req.file.mimetype);
+  await uploadToGitHub(req.file, folder, res, false);
+});
+
+
 app.delete('/giftedDelete.php', verifyTurnstile, async (req, res) => {
-    const { filename } = req.body;
+  const { filename } = req.body;
 
-    if (!filename) {
-        return res.status(400).json({ success: false, error: 'Filename is required' });
+  if (!filename) {
+    return res.status(400).json({ success: false, error: 'Filename is required' });
+  }
+
+  try {
+    const apiUrl = `${config.githubApiUrl}/repos/${config.githubUser}/${config.githubRepo}/contents/${filename}`;
+    const headers = {
+      'Authorization': `token ${config.githubToken}`,
+      'Content-Type': 'application/json'
+    };
+
+    const existingFile = await axios.get(apiUrl, { headers });
+    const sha = existingFile.data.sha;
+
+    const data = {
+      message: `Deleted: ${filename}`,
+      sha: sha,
+      branch: config.repoBranch
+    };
+
+    await axios.delete(apiUrl, { 
+      headers: headers,
+      data: data
+    });
+
+    res.json({ 
+      success: true,
+      message: `File ${filename} deleted successfully`
+    });
+
+  } catch (error) {
+    console.error('Error deleting file:', error);
+    if (error.response && error.response.status === 404) {
+      return res.status(404).json({ success: false, error: 'File not found' });
     }
-
-    try {
-        const apiUrl = `${config.githubApiUrl}/repos/${config.githubUser}/${config.githubRepo}/contents/${filename}`;
-        const headers = {
-            'Authorization': `token ${config.githubToken}`,
-            'Content-Type': 'application/json'
-        };
-
-        const existingFile = await axios.get(apiUrl, { headers });
-        const sha = existingFile.data.sha;
-
-        const data = {
-            message: `Deleted: ${filename}`,
-            sha: sha,
-            branch: config.repoBranch
-        };
-
-        await axios.delete(apiUrl, { 
-            headers: headers,
-            data: data
-        });
-
-        res.json({ 
-            success: true,
-            message: `File ${filename} deleted successfully`
-        });
-
-    } catch (error) {
-        console.error('Error deleting file:', error);
-        if (error.response && error.response.status === 404) {
-            return res.status(404).json({ success: false, error: 'File not found' });
-        }
-        res.status(500).json({ success: false, error: error.message });
-    }
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 app.listen(config.port, () => {
-    console.log(`Server is running on port ${config.port}`);
+  console.log(`Server is running on port ${config.port}`);
 });
