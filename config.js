@@ -4,7 +4,7 @@ module.exports = {
   port: process.env.PORT || '5000',
   repoBranch: process.env.REPO_BRANCH || 'main', // Replace or not
   githubRepo: process.env.GITHUB_REPO || 'ghbcdn', // Your storage repo name
-  commitMessage: process.env.COMMIT_MESSAGE || 'Github Cdn', // Your commit Message
+  commitMessage: process.env.COMMIT_MESSAGE || 'Github Cdn:Upload', // Your commit Message
   githubUser: process.env.GITHUB_USERNAME || 'mauricegift', // Yout github username
   githubApiUrl: process.env.GITHUB_API_URL || 'https://api.github.com', // Maintain this
   cdnApiUrl: process.env.CDN_API_URL || 'https://cdn.jsdelivr.net/gh', // Maintain this
