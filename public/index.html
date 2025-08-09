@@ -3,17 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="GitHub File Manager - Modern interface for managing files on GitHub">
-  <title>GITHUB CDN</title>
+  <meta name="description" content="Ladybug API Manager - Modern interface for managing Ladybug.js APIs">
+  <title>LADYBUG API MANAGER</title>
   <link rel="icon" href="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg">
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Include Ladybug.js V9 -->
+  <script src="ladybug-v9.js"></script>
   <style>
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
+      --primary: #ff6b6b;
+      --primary-dark: #e55555;
+      --secondary: #4ecdc4;
+      --accent: #45b7d1;
       --dark: #0f172a;
       --dark-light: #1e293b;
       --light: #f8fafc;
@@ -21,6 +25,8 @@
       --success: #10b981;
       --danger: #ef4444;
       --warning: #f59e0b;
+      --ladybug-red: #dc2626;
+      --ladybug-orange: #ea580c;
     }
 
     /* Light mode variables */
@@ -39,7 +45,7 @@
 
     body {
       font-family: 'Inter', sans-serif;
-      background-color: var(--dark);
+      background: linear-gradient(135deg, var(--dark) 0%, #1a202c 100%);
       color: var(--light);
       min-height: 100vh;
       display: flex;
@@ -48,18 +54,19 @@
 
     /* Sidebar */
     .sidebar {
-      width: 280px;
-      background-color: var(--dark-light);
+      width: 300px;
+      background: linear-gradient(180deg, var(--dark-light) 0%, #2d3748 100%);
       padding: 1.5rem;
       position: fixed;
       height: 100vh;
-      transition: all 0.3s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       z-index: 1000;
-      border-top-right-radius: 20px;
-      border-bottom-right-radius: 20px;
+      border-top-right-radius: 25px;
+      border-bottom-right-radius: 25px;
       transform: translateX(-100%);
-      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
       overflow-y: auto;
+      backdrop-filter: blur(10px);
     }
 
     .sidebar.active {
@@ -71,6 +78,8 @@
       align-items: center;
       justify-content: space-between;
       margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     }
 
     .sidebar-close {
@@ -80,6 +89,12 @@
       font-size: 1.5rem;
       cursor: pointer;
       display: none;
+      transition: all 0.2s ease;
+    }
+
+    .sidebar-close:hover {
+      color: var(--primary);
+      transform: rotate(90deg);
     }
 
     .logo-container {
@@ -88,16 +103,21 @@
     }
 
     .logo {
-      width: 40px;
-      height: 40px;
+      width: 45px;
+      height: 45px;
       border-radius: 50%;
       margin-right: 12px;
+      border: 2px solid var(--primary);
+      padding: 2px;
     }
 
     .logo-text {
       font-weight: 700;
-      font-size: 1.25rem;
-      color: var(--light);
+      font-size: 1.3rem;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .nav-menu {
@@ -111,26 +131,47 @@
     .nav-link {
       display: flex;
       align-items: center;
-      padding: 0.75rem 1rem;
-      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
       color: var(--gray);
       text-decoration: none;
-      transition: all 0.2s ease;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .nav-link::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      transition: all 0.3s ease;
+      z-index: -1;
+    }
+
+    .nav-link:hover::before {
+      left: 0;
     }
 
     .nav-link:hover {
-      background-color: rgba(99, 102, 241, 0.1);
-      color: var(--light);
+      color: white;
+      transform: translateX(5px);
     }
 
     .nav-link.active {
-      background-color: var(--primary);
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
       color: white;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
     }
 
     .nav-link i {
-      margin-right: 12px;
-      font-size: 1.1rem;
+      margin-right: 15px;
+      font-size: 1.2rem;
+      width: 20px;
+      text-align: center;
     }
 
     /* Main Content */
@@ -148,12 +189,13 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1rem 1.5rem;
-      background-color: var(--dark-light);
-      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 1.5rem 2rem;
+      background: linear-gradient(135deg, var(--dark-light) 0%, #2d3748 100%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
       position: sticky;
       top: 0;
       z-index: 100;
+      backdrop-filter: blur(10px);
     }
 
     .header-left {
@@ -169,18 +211,29 @@
       font-size: 1.5rem;
       cursor: pointer;
       display: none;
+      transition: all 0.2s ease;
+    }
+
+    .menu-toggle:hover {
+      color: var(--primary);
+      transform: scale(1.1);
     }
 
     .header-logo {
-      width: 32px;
-      height: 32px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
+      border: 2px solid var(--primary);
+      padding: 2px;
     }
 
     .header-title {
-      font-size: 1.25rem;
-      font-weight: 600;
-      color: var(--light);
+      font-size: 1.4rem;
+      font-weight: 700;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
     .header-actions {
@@ -193,208 +246,297 @@
       background: none;
       border: none;
       color: var(--light);
-      font-size: 1.25rem;
+      font-size: 1.3rem;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+      padding: 8px;
+      border-radius: 50%;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255, 107, 107, 0.1);
+      color: var(--primary);
+      transform: rotate(180deg);
     }
 
     /* Content */
     .content {
-      padding: 1.5rem;
+      padding: 2rem;
       flex: 1;
       width: 100%;
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
     /* Card */
     .card {
-      background-color: var(--dark-light);
-      border-radius: 1rem;
-      padding: 1.5rem;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      background: linear-gradient(135deg, var(--dark-light) 0%, #2d3748 100%);
+      border-radius: 20px;
+      padding: 2rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       margin-bottom: 2rem;
       width: 100%;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
     }
 
     .card-title {
-      font-size: 1.5rem;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
+      font-size: 1.8rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
       text-align: center;
-      color: var(--light);
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
 
-    /* Upload Form */
-    .upload-area {
-      border: 2px dashed var(--gray);
-      border-radius: 1rem;
-      padding: 2rem 1rem;
+    /* API Test Area */
+    .api-test-area {
+      border: 2px dashed var(--primary);
+      border-radius: 15px;
+      padding: 2rem;
       text-align: center;
       cursor: pointer;
-      transition: all 0.2s ease;
-      margin-bottom: 1.5rem;
+      transition: all 0.3s ease;
+      margin-bottom: 2rem;
+      background: rgba(255, 107, 107, 0.05);
     }
 
-    .upload-area:hover {
-      border-color: var(--primary);
+    .api-test-area:hover {
+      border-color: var(--secondary);
+      background: rgba(78, 205, 196, 0.05);
+      transform: translateY(-2px);
     }
 
-    .upload-area i {
-      font-size: 2.5rem;
-      color: var(--primary);
+    .api-test-area i {
+      font-size: 3rem;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
       margin-bottom: 1rem;
     }
 
-    .upload-area p {
+    .api-test-area p {
       margin-bottom: 0.5rem;
+      color: var(--light);
+      font-size: 1.1rem;
+      font-weight: 500;
+    }
+
+    .api-test-area small {
+      color: var(--gray);
+      font-size: 0.9rem;
+    }
+
+    /* Form Elements */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+      font-weight: 600;
       color: var(--light);
       font-size: 1rem;
     }
 
-    .upload-area small {
-      color: var(--gray);
-      font-size: 0.875rem;
-    }
-
-    #file-input {
-      display: none;
-    }
-
-    .file-info {
-      display: none;
-      margin-top: 1rem;
-      padding: 1rem;
-      background-color: rgba(99, 102, 241, 0.1);
-      border-radius: 0.5rem;
-    }
-
-    .file-info.active {
-      display: block;
-    }
-
-    .file-name {
-      font-weight: 500;
-      margin-bottom: 0.25rem;
-      color: var(--light);
-      word-break: break-all;
-    }
-
-    .file-size {
-      color: var(--gray);
-      font-size: 0.875rem;
-    }
-
-    .submit-btn {
-      background-color: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.75rem 1.5rem;
-      border-radius: 0.5rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      width: 100%;
-      max-width: 200px;
-      margin: 1rem auto 0;
-      display: block;
-    }
-
-    .submit-btn:hover {
-      background-color: var(--primary-dark);
-    }
-
-    .submit-btn:disabled {
-      background-color: var(--gray);
-      cursor: not-allowed;
-    }
-
-    /* Delete Form */
-    .delete-form {
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-      width: 100%;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    .form-label {
-      font-weight: 500;
-      color: var(--light);
-    }
-
-    .form-input {
-      background-color: rgba(0, 0, 0, 0.05);
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      border-radius: 0.5rem;
-      padding: 0.75rem 1rem;
+    .form-input, .form-select, .form-textarea {
+      background: rgba(0, 0, 0, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
       color: var(--light);
       font-family: inherit;
       width: 100%;
+      transition: all 0.3s ease;
+      font-size: 1rem;
     }
 
-    .form-input:focus {
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
       outline: none;
       border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+      background: rgba(255, 107, 107, 0.05);
     }
 
-    /* Result */
-    .result {
+    .form-textarea {
+      min-height: 120px;
+      resize: vertical;
+      font-family: 'Courier New', monospace;
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 1rem 2rem;
+      border-radius: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: none;
+      font-size: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+      transition: all 0.5s ease;
+    }
+
+    .btn:hover::before {
+      left: 100%;
+    }
+
+    .btn-primary {
+      background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+      color: white;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
+    }
+
+    .btn-secondary {
+      background: linear-gradient(45deg, var(--secondary), var(--accent));
+      color: white;
+      box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
+    }
+
+    .btn-secondary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
+    }
+
+    .btn:disabled {
+      background: var(--gray);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .btn:disabled::before {
+      display: none;
+    }
+
+    /* API Response */
+    .api-response {
       margin-top: 2rem;
-      padding: 1.5rem;
-      border-radius: 0.5rem;
+      padding: 2rem;
+      border-radius: 15px;
       display: none;
       width: 100%;
+      border-left: 4px solid var(--primary);
     }
 
-    .result.success {
-      background-color: rgba(16, 185, 129, 0.1);
-      border-left: 4px solid var(--success);
+    .api-response.success {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+      border-left-color: var(--success);
       display: block;
     }
 
-    .result.error {
-      background-color: rgba(239, 68, 68, 0.1);
-      border-left: 4px solid var(--danger);
+    .api-response.error {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+      border-left-color: var(--danger);
       display: block;
     }
 
-    .result-title {
+    .response-title {
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: var(--light);
+      font-size: 1.2rem;
+    }
+
+    .response-content {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: var(--light);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    /* Code Editor */
+    .code-editor {
+      background: #1a1a1a;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 1rem;
+      font-family: 'Courier New', monospace;
+      color: #f8f8f2;
+      min-height: 200px;
+      resize: vertical;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .code-editor:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+    }
+
+    /* Ladybug Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+
+    .feature-card {
+      background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
+      border-radius: 15px;
+      padding: 1.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      background: linear-gradient(45deg, var(--primary), var(--secondary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-size: 1.2rem;
       font-weight: 600;
       margin-bottom: 0.5rem;
       color: var(--light);
     }
 
-    .result-url {
-      word-break: break-all;
-      margin-bottom: 1rem;
-      color: var(--light);
-    }
-
-    .copy-btn {
-      background-color: transparent;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-      padding: 0.5rem 1rem;
-      border-radius: 0.5rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .copy-btn:hover {
-      background-color: var(--primary);
-      color: white;
+    .feature-description {
+      color: var(--gray);
+      font-size: 0.9rem;
+      line-height: 1.5;
     }
 
     /* Turnstile */
     .cf-turnstile-container {
-      margin: 1.5rem auto;
+      margin: 2rem auto;
       display: flex;
       justify-content: center;
     }
@@ -402,29 +544,34 @@
     .cf-turnstile {
       transform: scale(0.9);
       transform-origin: center;
+      border-radius: 8px;
+      overflow: hidden;
     }
 
     /* Footer */
     .footer {
       text-align: center;
-      padding: 1.5rem;
-      background-color: var(--dark-light);
-      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 2rem;
+      background: linear-gradient(135deg, var(--dark-light) 0%, #2d3748 100%);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
       margin-top: auto;
     }
 
     .footer p {
       margin-bottom: 0.5rem;
       color: var(--gray);
-      font-size: 0.875rem;
+      font-size: 0.9rem;
     }
 
     .footer a {
       color: var(--primary);
       text-decoration: none;
+      font-weight: 600;
+      transition: all 0.2s ease;
     }
 
     .footer a:hover {
+      color: var(--secondary);
       text-decoration: underline;
     }
 
@@ -434,8 +581,8 @@
         transform: translateX(0);
       }
       .main-content {
-        margin-left: 280px;
-        width: calc(100% - 280px);
+        margin-left: 300px;
+        width: calc(100% - 300px);
       }
     }
 
@@ -447,7 +594,10 @@
         display: block;
       }
       .header-title {
-        font-size: 1.1rem;
+        font-size: 1.2rem;
+      }
+      .sidebar {
+        width: 280px;
       }
     }
 
@@ -456,30 +606,49 @@
         padding: 1rem;
       }
       .card {
-        padding: 1rem;
+        padding: 1.5rem;
       }
-      .upload-area {
-        padding: 1.5rem 1rem;
+      .api-test-area {
+        padding: 1.5rem;
       }
-      .upload-area i {
-        font-size: 2rem;
+      .api-test-area i {
+        font-size: 2.5rem;
       }
       .card-title {
-        font-size: 1.3rem;
+        font-size: 1.5rem;
       }
-      .submit-btn {
+      .btn {
         width: 100%;
+      }
+      .features-grid {
+        grid-template-columns: 1fr;
       }
     }
 
     /* Animations */
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
+    @keyframes ladybugFly {
+      0% { transform: translateX(-10px) rotate(0deg); }
+      50% { transform: translateX(10px) rotate(5deg); }
+      100% { transform: translateX(-10px) rotate(0deg); }
     }
 
-    .fade-in {
-      animation: fadeIn 0.3s ease forwards;
+    @keyframes fadeInUp {
+      from { 
+        opacity: 0; 
+        transform: translateY(30px); 
+      }
+      to { 
+        opacity: 1; 
+        transform: translateY(0); 
+      }
+    }
+
+    .fade-in-up {
+      animation: fadeInUp 0.6s ease forwards;
+    }
+
+    .ladybug-animate {
+      animation: ladybugFly 3s ease-in-out infinite;
     }
 
     /* Page transitions */
@@ -498,16 +667,32 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.6);
       z-index: 999;
       opacity: 0;
       visibility: hidden;
       transition: all 0.3s ease;
+      backdrop-filter: blur(5px);
     }
 
     .sidebar-overlay.active {
       opacity: 1;
       visibility: visible;
+    }
+
+    /* Loading animation */
+    .loading-spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   </style>
 </head>
@@ -519,8 +704,8 @@
   <aside class="sidebar">
     <div class="sidebar-header">
       <div class="logo-container">
-        <img src="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg" alt="Logo" class="logo">
-        <span class="logo-text">GitHub CDN</span>
+        <img src="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg" alt="Ladybug Logo" class="logo ladybug-animate">
+        <span class="logo-text">Ladybug API</span>
       </div>
       <button class="sidebar-close">
         <i class="fas fa-times"></i>
@@ -528,15 +713,27 @@
     </div>
     <ul class="nav-menu">
       <li class="nav-item">
-        <a href="#" class="nav-link active" data-page="upload">
-          <i class="fas fa-cloud-upload-alt"></i>
-          <span>Upload Files</span>
+        <a href="#" class="nav-link active" data-page="test">
+          <i class="fas fa-bug"></i>
+          <span>API Tester</span>
         </a>
       </li>
       <li class="nav-item">
-        <a href="#" class="nav-link" data-page="delete">
-          <i class="fas fa-trash-alt"></i>
-          <span>Delete Files</span>
+        <a href="#" class="nav-link" data-page="features">
+          <i class="fas fa-star"></i>
+          <span>Features</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="#" class="nav-link" data-page="examples">
+          <i class="fas fa-code"></i>
+          <span>Code Examples</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="#" class="nav-link" data-page="playground">
+          <i class="fas fa-play"></i>
+          <span>Playground</span>
         </a>
       </li>
     </ul>
@@ -550,8 +747,8 @@
         <button class="menu-toggle" aria-label="Toggle menu">
           <i class="fas fa-bars"></i>
         </button>
-        <img src="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg" alt="Logo" class="header-logo">
-        <h1 class="header-title">GitHub CDN</h1>
+        <img src="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg" alt="Ladybug Logo" class="header-logo">
+        <h1 class="header-title">Ladybug.js V9 API Manager</h1>
       </div>
       <div class="header-actions">
         <button class="theme-toggle" aria-label="Toggle theme">
@@ -562,64 +759,195 @@
 
     <!-- Content -->
     <div class="content">
-      <!-- Upload Page -->
-      <div class="page active" id="upload-page">
-        <div class="card fade-in">
-          <h2 class="card-title">Upload New File</h2>
-          <div class="upload-area" id="upload-area">
-            <i class="fas fa-file-upload"></i>
-            <p>Drag & Drop your files here</p>
-            <small>or click to browse files (Max 50MB)</small>
-            <input type="file" id="file-input" name="file">
+      <!-- API Tester Page -->
+      <div class="page active" id="test-page">
+        <div class="card fade-in-up">
+          <h2 class="card-title">🐞 Ladybug API Tester</h2>
+          
+          <div class="form-group">
+            <label for="api-method" class="form-label">API Method</label>
+            <select id="api-method" class="form-select">
+              <option value="GET">GET Request</option>
+              <option value="POST">POST Request</option>
+              <option value="PUT">PUT Request</option>
+              <option value="DELETE">DELETE Request</option>
+            </select>
           </div>
-          <div class="file-info" id="file-info">
-            <p class="file-name" id="file-name"></p>
-            <p class="file-size" id="file-size"></p>
+
+          <div class="form-group">
+            <label for="api-url" class="form-label">API Endpoint URL</label>
+            <input type="url" id="api-url" class="form-input" placeholder="https://api.example.com/endpoint" required>
           </div>
+
+          <div class="form-group">
+            <label for="api-headers" class="form-label">Headers (JSON format)</label>
+            <textarea id="api-headers" class="form-textarea" placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'></textarea>
+          </div>
+
+          <div class="form-group" id="request-body-group">
+            <label for="api-body" class="form-label">Request Body (JSON format)</label>
+            <textarea id="api-body" class="form-textarea" placeholder='{"key": "value", "data": "example"}'></textarea>
+          </div>
+
           <div class="cf-turnstile-container">
             <div class="cf-turnstile" data-sitekey="0x4AAAAAABAFw6YmZiCTI8D9" data-callback="onTurnstileSuccess" data-theme="dark"></div>
           </div>
-          <button class="submit-btn" id="submit-btn" disabled>Upload File</button>
+
+          <button class="btn btn-primary" id="test-api-btn" disabled>
+            <i class="fas fa-rocket"></i> Test API
+          </button>
         </div>
 
-        <div class="result" id="result">
-          <h3 class="result-title" id="result-title"></h3>
-          <p class="result-url" id="result-url"></p>
-          <button class="copy-btn" id="copy-btn">Copy URL</button>
+        <div class="api-response" id="api-response">
+          <h3 class="response-title" id="response-title"></h3>
+          <div class="response-content" id="response-content"></div>
+          <button class="btn btn-secondary" id="copy-response-btn" style="margin-top: 1rem;">
+            <i class="fas fa-copy"></i> Copy Response
+          </button>
         </div>
       </div>
 
-      <!-- Delete Page -->
-      <div class="page" id="delete-page">
-        <div class="card fade-in">
-          <h2 class="card-title">Delete File</h2>
-          <form class="delete-form" id="delete-form">
-            <div class="form-group">
-              <label for="filename" class="form-label">File Path</label>
-              <input type="text" id="filename" class="form-input" placeholder="image/example.jpg" required>
+      <!-- Features Page -->
+      <div class="page" id="features-page">
+        <div class="card fade-in-up">
+          <h2 class="card-title">🌟 Ladybug.js V9 Features</h2>
+          <div class="features-grid">
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-rocket"></i>
+              </div>
+              <h3 class="feature-title">Modern ES6+ Classes</h3>
+              <p class="feature-description">Built with modern JavaScript features including Proxy-based element access and async/await support.</p>
             </div>
-            <div class="cf-turnstile-container">
-              <div class="cf-turnstile" data-sitekey="0x4AAAAAABAFw6YmZiCTI8D9" data-callback="onTurnstileSuccess" data-theme="dark"></div>
+            
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-magic"></i>
+              </div>
+              <h3 class="feature-title">Web Animations API</h3>
+              <p class="feature-description">Powerful animation system using the native Web Animations API for smooth, performant animations.</p>
             </div>
-            <button type="submit" class="submit-btn" id="delete-btn" disabled>Delete File</button>
-          </form>
+            
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-eye"></i>
+              </div>
+              <h3 class="feature-title">Observer APIs</h3>
+              <p class="feature-description">Built-in support for Intersection, Mutation, and Resize Observers for reactive programming.</p>
+            </div>
+            
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-puzzle-piece"></i>
+              </div>
+              <h3 class="feature-title">Web Components</h3>
+              <p class="feature-description">Native Web Components support for creating reusable custom elements.</p>
+            </div>
+            
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-mobile-alt"></i>
+              </div>
+              <h3 class="feature-title">PWA Utilities</h3>
+              <p class="feature-description">Progressive Web App utilities including service worker registration and offline support.</p>
+            </div>
+            
+            <div class="feature-card">
+              <div class="feature-icon">
+                <i class="fas fa-database"></i>
+              </div>
+              <h3 class="feature-title">State Management</h3>
+              <p class="feature-description">Built-in reactive state management with data binding and change detection.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Examples Page -->
+      <div class="page" id="examples-page">
+        <div class="card fade-in-up">
+          <h2 class="card-title">💻 Code Examples</h2>
+          
+          <div class="form-group">
+            <label for="example-select" class="form-label">Select Example</label>
+            <select id="example-select" class="form-select">
+              <option value="basic">Basic DOM Manipulation</option>
+              <option value="ajax">AJAX Requests</option>
+              <option value="animations">Animations</option>
+              <option value="events">Event Handling</option>
+              <option value="state">State Management</option>
+              <option value="observers">Observer APIs</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Code Example</label>
+            <textarea id="code-example" class="code-editor" readonly></textarea>
+          </div>
+
+          <button class="btn btn-secondary" id="run-example-btn">
+            <i class="fas fa-play"></i> Run Example
+          </button>
+          <button class="btn btn-primary" id="copy-code-btn">
+            <i class="fas fa-copy"></i> Copy Code
+          </button>
         </div>
 
-        <div class="result" id="delete-result">
-          <h3 class="result-title" id="delete-result-title"></h3>
-          <p id="delete-result-message"></p>
+        <div class="api-response" id="example-result">
+          <h3 class="response-title">Example Output</h3>
+          <div class="response-content" id="example-output"></div>
+        </div>
+      </div>
+
+      <!-- Playground Page -->
+      <div class="page" id="playground-page">
+        <div class="card fade-in-up">
+          <h2 class="card-title">🎮 Ladybug.js Playground</h2>
+          
+          <div class="form-group">
+            <label for="playground-code" class="form-label">Write Your Ladybug.js Code</label>
+            <textarea id="playground-code" class="code-editor" placeholder="// Write your Ladybug.js code here
+// Example:
+const $ = new Ladybug();
+$('#myElement').text('Hello Ladybug!');"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="playground-html" class="form-label">HTML Sandbox</label>
+            <textarea id="playground-html" class="form-textarea" placeholder="<div id='myElement'>Original Text</div>"></textarea>
+          </div>
+
+          <button class="btn btn-primary" id="run-playground-btn">
+            <i class="fas fa-play"></i> Run Code
+          </button>
+          <button class="btn btn-secondary" id="clear-playground-btn">
+            <i class="fas fa-trash"></i> Clear All
+          </button>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">🖥️ Live Preview</h3>
+          <div id="playground-preview" style="border: 2px solid var(--gray); border-radius: 8px; padding: 1rem; min-height: 200px; background: rgba(255, 255, 255, 0.05);">
+            <p style="color: var(--gray); text-align: center;">Run your code to see the preview</p>
+          </div>
+        </div>
+
+        <div class="api-response" id="playground-result">
+          <h3 class="response-title">Console Output</h3>
+          <div class="response-content" id="playground-output"></div>
         </div>
       </div>
     </div>
 
     <footer class="footer">
-      <p><i>Upload Upto 50MB, NO Expiry</i></p>
-      <p><b>NB:</b> <i>Supports Most File Types</i></p>
+      <p><i>🐞 Ladybug.js V9 - Modern JavaScript Library</i></p>
+      <p><b>Features:</b> <i>ES6+ Classes, Web APIs, Reactive State Management</i></p>
       <a href="https://www.giftedtech.web.id" class="text-blue-500 hover:underline">©2024-2025<b> Gifted Tech</b></a>
     </footer>
   </main>
 
   <script>
+    // Global variables
     const body = document.body;
     const themeToggle = document.querySelector('.theme-toggle');
     const menuToggle = document.querySelector('.menu-toggle');
@@ -629,27 +957,247 @@
     const navLinks = document.querySelectorAll('.nav-link');
     const pages = document.querySelectorAll('.page');
 
-    const uploadArea = document.getElementById('upload-area');
-    const fileInput = document.getElementById('file-input');
-    const fileInfo = document.getElementById('file-info');
-    const fileName = document.getElementById('file-name');
-    const fileSize = document.getElementById('file-size');
-    const submitBtn = document.getElementById('submit-btn');
-    const resultDiv = document.getElementById('result');
-    const resultTitle = document.getElementById('result-title');
-    const resultUrl = document.getElementById('result-url');
-    const copyBtn = document.getElementById('copy-btn');
+    // API Tester elements
+    const apiMethodSelect = document.getElementById('api-method');
+    const apiUrlInput = document.getElementById('api-url');
+    const apiHeadersTextarea = document.getElementById('api-headers');
+    const apiBodyTextarea = document.getElementById('api-body');
+    const testApiBtn = document.getElementById('test-api-btn');
+    const apiResponse = document.getElementById('api-response');
+    const responseTitle = document.getElementById('response-title');
+    const responseContent = document.getElementById('response-content');
+    const copyResponseBtn = document.getElementById('copy-response-btn');
 
-    const deleteForm = document.getElementById('delete-form');
-    const filenameInput = document.getElementById('filename');
-    const deleteBtn = document.getElementById('delete-btn');
-    const deleteResult = document.getElementById('delete-result');
-    const deleteResultTitle = document.getElementById('delete-result-title');
-    const deleteResultMsg = document.getElementById('delete-result-message');
+    // Examples elements
+    const exampleSelect = document.getElementById('example-select');
+    const codeExample = document.getElementById('code-example');
+    const runExampleBtn = document.getElementById('run-example-btn');
+    const copyCodeBtn = document.getElementById('copy-code-btn');
+    const exampleResult = document.getElementById('example-result');
+    const exampleOutput = document.getElementById('example-output');
+
+    // Playground elements
+    const playgroundCode = document.getElementById('playground-code');
+    const playgroundHtml = document.getElementById('playground-html');
+    const runPlaygroundBtn = document.getElementById('run-playground-btn');
+    const clearPlaygroundBtn = document.getElementById('clear-playground-btn');
+    const playgroundPreview = document.getElementById('playground-preview');
+    const playgroundResult = document.getElementById('playground-result');
+    const playgroundOutput = document.getElementById('playground-output');
 
     let turnstileResponse = null;
     let turnstileWidgets = [];
 
+    // Code examples data
+    const codeExamples = {
+      basic: `// Basic DOM Manipulation with Ladybug.js
+const $ = new Ladybug();
+
+// Select elements and modify content
+$('#title').text('Welcome to Ladybug.js!');
+$('.description').html('<strong>Modern JavaScript Library</strong>');
+
+// Add CSS classes and styles
+$('#container').addClass('active').css({
+  'background-color': '#ff6b6b',
+  'padding': '20px',
+  'border-radius': '10px'
+});
+
+// Chain multiple operations
+$('.button')
+  .text('Click Me!')
+  .addClass('btn-primary')
+  .css('cursor', 'pointer');`,
+
+      ajax: `// AJAX Requests with Ladybug.js
+const $ = new Ladybug();
+
+// GET Request
+$.ajax({
+  url: 'https://jsonplaceholder.typicode.com/posts/1',
+  method: 'GET',
+  success: function(data) {
+    console.log('GET Success:', data);
+    $('#result').text(JSON.stringify(data, null, 2));
+  },
+  error: function(error) {
+    console.error('GET Error:', error);
+  }
+});
+
+// POST Request with data
+$.ajax({
+  url: 'https://jsonplaceholder.typicode.com/posts',
+  method: 'POST',
+  data: {
+    title: 'Ladybug.js Post',
+    body: 'This is a test post from Ladybug.js',
+    userId: 1
+  },
+  success: function(data) {
+    console.log('POST Success:', data);
+  }
+});`,
+
+      animations: `// Animations with Ladybug.js
+const $ = new Ladybug();
+
+// Fade in animation
+$('#element1').fadeIn(1000);
+
+// Slide animations
+$('#element2').slideDown(500);
+$('#element3').slideUp(300);
+
+// Custom animations using Web Animations API
+$('#element4').animate([
+  { transform: 'translateX(0px)', opacity: 1 },
+  { transform: 'translateX(100px)', opacity: 0.5 },
+  { transform: 'translateX(0px)', opacity: 1 }
+], {
+  duration: 2000,
+  iterations: Infinity,
+  easing: 'ease-in-out'
+});
+
+// Chained animations
+$('#element5')
+  .fadeOut(500)
+  .then(() => {
+    $('#element5').text('Animation Complete!').fadeIn(500);
+  });`,
+
+      events: `// Event Handling with Ladybug.js
+const $ = new Ladybug();
+
+// Click events
+$('#button1').on('click', function(e) {
+  console.log('Button clicked!', e);
+  $(this).text('Clicked!').addClass('clicked');
+});
+
+// Multiple event types
+$('#input1').on('focus blur keyup', function(e) {
+  console.log('Input event:', e.type, this.value);
+});
+
+// Event delegation
+$(document).on('click', '.dynamic-button', function() {
+  console.log('Dynamic button clicked:', this.textContent);
+});
+
+// Custom events
+$('#trigger').on('click', function() {
+  $('#target').trigger('customEvent', { data: 'Hello!' });
+});
+
+$('#target').on('customEvent', function(e, data) {
+  console.log('Custom event received:', data);
+});
+
+// Remove events
+$('#remove-events').on('click', function() {
+  $('#button1').off('click');
+  console.log('Click event removed from button1');
+});`,
+
+      state: `// State Management with Ladybug.js
+const $ = new Ladybug();
+
+// Create reactive state
+const state = $.createState({
+  count: 0,
+  user: {
+    name: 'John Doe',
+    email: 'john@example.com'
+  },
+  todos: []
+});
+
+// Watch for state changes
+state.watch('count', (newValue, oldValue) => {
+  console.log(\`Count changed from \${oldValue} to \${newValue}\`);
+  $('#counter').text(newValue);
+});
+
+state.watch('user.name', (newValue) => {
+  $('#username').text(newValue);
+});
+
+// Update state
+$('#increment').on('click', () => {
+  state.count++;
+});
+
+$('#decrement').on('click', () => {
+  state.count--;
+});
+
+$('#update-user').on('click', () => {
+  state.user.name = 'Jane Smith';
+  state.user.email = 'jane@example.com';
+});
+
+// Computed properties
+const computedFullName = state.computed(() => {
+  return \`\${state.user.name} <\${state.user.email}>\`;
+});
+
+console.log('Computed full name:', computedFullName.value);`,
+
+      observers: `// Observer APIs with Ladybug.js
+const $ = new Ladybug();
+
+// Intersection Observer
+const intersectionObserver = $.observe.intersection('.fade-in-element', {
+  threshold: 0.5,
+  callback: (entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        $(entry.target).addClass('visible').fadeIn(1000);
+      }
+    });
+  }
+});
+
+// Mutation Observer
+const mutationObserver = $.observe.mutation('#dynamic-content', {
+  childList: true,
+  subtree: true,
+  callback: (mutations) => {
+    mutations.forEach(mutation => {
+      console.log('DOM changed:', mutation.type);
+      if (mutation.addedNodes.length > 0) {
+        console.log('Nodes added:', mutation.addedNodes);
+      }
+    });
+  }
+});
+
+// Resize Observer
+const resizeObserver = $.observe.resize('.resizable-element', {
+  callback: (entries) => {
+    entries.forEach(entry => {
+      const { width, height } = entry.contentRect;
+      console.log(\`Element resized: \${width}x\${height}\`);
+      $(entry.target).attr('data-size', \`\${width}x\${height}\`);
+    });
+  }
+});
+
+// Performance Observer
+const performanceObserver = $.observe.performance({
+  entryTypes: ['navigation', 'paint'],
+  callback: (entries) => {
+    entries.forEach(entry => {
+      console.log('Performance entry:', entry.name, entry.duration);
+    });
+  }
+});`
+    };
+
+    // Theme management
     function toggleTheme() {
       const currentTheme = body.getAttribute('data-theme');
       const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -659,19 +1207,8 @@
       const icon = themeToggle.querySelector('i');
       icon.className = newTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
       
-      // Update Turnstile theme without re-rendering
-      if (window.turnstile) {
-        turnstileWidgets.forEach(widget => {
-          const iframe = widget.container.querySelector('iframe');
-          if (iframe) {
-            iframe.contentWindow.postMessage({
-              event: 'turnstile.theme',
-              theme: newTheme,
-              widgetId: widget.id
-            }, 'https://challenges.cloudflare.com');
-          }
-        });
-      }
+      // Update Turnstile theme
+      updateTurnstileTheme(newTheme);
     }
 
     function setInitialTheme() {
@@ -682,6 +1219,22 @@
       icon.className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
     }
 
+    function updateTurnstileTheme(theme) {
+      if (window.turnstile) {
+        turnstileWidgets.forEach(widget => {
+          const iframe = widget.container.querySelector('iframe');
+          if (iframe) {
+            iframe.contentWindow.postMessage({
+              event: 'turnstile.theme',
+              theme: theme,
+              widgetId: widget.id
+            }, 'https://challenges.cloudflare.com');
+          }
+        });
+      }
+    }
+
+    // Sidebar management
     function toggleSidebar() {
       sidebar.classList.toggle('active');
       sidebarOverlay.classList.toggle('active');
@@ -692,83 +1245,25 @@
       sidebarOverlay.classList.remove('active');
     }
 
-    menuToggle.addEventListener('click', toggleSidebar);
-    sidebarClose.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
-
-    navLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        
-        navLinks.forEach(navLink => navLink.classList.remove('active'));
-        link.classList.add('active');
-        
-        const pageId = link.getAttribute('data-page');
-        pages.forEach(page => page.classList.remove('active'));
-        document.getElementById(`${pageId}-page`).classList.add('active');
-        
-        closeSidebar();
-      });
-    });
-
-    uploadArea.addEventListener('click', () => fileInput.click());
-
-    fileInput.addEventListener('change', () => {
-      if (fileInput.files.length) {
-        const file = fileInput.files[0];
-        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        
-        fileName.textContent = file.name;
-        fileSize.textContent = `${fileSizeMB} MB`;
-        fileInfo.classList.add('active');
-        
-        if (file.size > 50 * 1024 * 1024) {
-          submitBtn.disabled = true;
-          Swal.fire({
-            title: 'File Too Large',
-            text: 'Maximum file size is 50MB',
-            icon: 'error',
-            background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-            color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-          });
-        } else {
-          submitBtn.disabled = !turnstileResponse;
-        }
-      }
-    });
-
-    uploadArea.addEventListener('dragover', (e) => {
-      e.preventDefault();
-      uploadArea.style.borderColor = '#6366f1';
-    });
-
-    uploadArea.addEventListener('dragleave', () => {
-      uploadArea.style.borderColor = 'var(--gray)';
-    });
-
-    uploadArea.addEventListener('drop', (e) => {
-      e.preventDefault();
-      uploadArea.style.borderColor = 'var(--gray)';
+    // Navigation
+    function switchPage(pageId) {
+      pages.forEach(page => page.classList.remove('active'));
+      document.getElementById(`${pageId}-page`).classList.add('active');
       
-      if (e.dataTransfer.files.length) {
-        fileInput.files = e.dataTransfer.files;
-        const event = new Event('change');
-        fileInput.dispatchEvent(event);
-      }
-    });
+      navLinks.forEach(link => link.classList.remove('active'));
+      document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+    }
 
+    // Turnstile callback
     function onTurnstileSuccess(token) {
       turnstileResponse = token;
-      submitBtn.disabled = !(fileInput.files.length && fileInput.files[0].size <= 50 * 1024 * 1024);
-      deleteBtn.disabled = false;
+      testApiBtn.disabled = false;
     }
 
     function resetTurnstile() {
       turnstileResponse = null;
-      submitBtn.disabled = true;
-      deleteBtn.disabled = true;
+      testApiBtn.disabled = true;
       
-      // Only reset the current page's Turnstile widget
       const currentPage = document.querySelector('.page.active');
       const widgetContainer = currentPage.querySelector('.cf-turnstile');
       if (widgetContainer && window.turnstile) {
@@ -782,7 +1277,6 @@
           callback: onTurnstileSuccess
         });
         
-        // Update the widget reference
         const widgetIndex = turnstileWidgets.findIndex(w => w.container === widgetContainer);
         if (widgetIndex !== -1) {
           turnstileWidgets[widgetIndex].id = widgetId;
@@ -790,13 +1284,12 @@
       }
     }
 
-    submitBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      
+    // API Testing functionality
+    async function testAPI() {
       if (!turnstileResponse) {
         Swal.fire({
           title: 'CAPTCHA Required',
-          text: 'Please complete the CAPTCHA',
+          text: 'Please complete the CAPTCHA verification',
           icon: 'error',
           background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
           color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
@@ -804,14 +1297,57 @@
         return;
       }
 
-      const file = fileInput.files[0];
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('turnstileResponse', turnstileResponse);
+      const method = apiMethodSelect.value;
+      const url = apiUrlInput.value.trim();
+      const headersText = apiHeadersTextarea.value.trim();
+      const bodyText = apiBodyTextarea.value.trim();
+
+      if (!url) {
+        Swal.fire({
+          title: 'URL Required',
+          text: 'Please enter an API endpoint URL',
+          icon: 'error',
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+        });
+        return;
+      }
+
+      let headers = {};
+      if (headersText) {
+        try {
+          headers = JSON.parse(headersText);
+        } catch (e) {
+          Swal.fire({
+            title: 'Invalid Headers',
+            text: 'Headers must be valid JSON format',
+            icon: 'error',
+            background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+            color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+          });
+          return;
+        }
+      }
+
+      let body = null;
+      if (bodyText && ['POST', 'PUT'].includes(method)) {
+        try {
+          body = JSON.parse(bodyText);
+        } catch (e) {
+          Swal.fire({
+            title: 'Invalid Body',
+            text: 'Request body must be valid JSON format',
+            icon: 'error',
+            background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+            color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+          });
+          return;
+        }
+      }
 
       const loadingAlert = Swal.fire({
-        title: 'Uploading...',
-        html: 'Please wait while we upload your file',
+        title: 'Testing API...',
+        html: `<div class="loading-spinner"></div><br>Making ${method} request to ${url}`,
         allowOutsideClick: false,
         showConfirmButton: false,
         didOpen: () => Swal.showLoading(),
@@ -820,173 +1356,268 @@
       });
 
       try {
-        const response = await fetch('/giftedUpload.php', {
-          method: 'POST',
-          body: formData
+        const requestOptions = {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            ...headers
+          }
+        };
+
+        if (body && ['POST', 'PUT'].includes(method)) {
+          requestOptions.body = JSON.stringify(body);
+        }
+
+        const startTime = performance.now();
+        const response = await fetch(url, requestOptions);
+        const endTime = performance.now();
+        const responseTime = Math.round(endTime - startTime);
+
+        const responseData = await response.text();
+        let parsedData;
+        
+        try {
+          parsedData = JSON.parse(responseData);
+        } catch (e) {
+          parsedData = responseData;
+        }
+
+        loadingAlert.close();
+
+        const responseInfo = {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          responseTime: responseTime,
+          data: parsedData
+        };
+
+        apiResponse.className = response.ok ? 'api-response success' : 'api-response error';
+        responseTitle.textContent = response.ok ? 
+          `✅ Success (${response.status} ${response.statusText})` : 
+          `❌ Error (${response.status} ${response.statusText})`;
+        responseContent.textContent = JSON.stringify(responseInfo, null, 2);
+
+        Swal.fire({
+          title: response.ok ? 'API Test Successful!' : 'API Test Failed',
+          html: `
+            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
+            <p><strong>Response Time:</strong> ${responseTime}ms</p>
+            <p><strong>Method:</strong> ${method}</p>
+          `,
+          icon: response.ok ? 'success' : 'error',
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
         });
 
-        const result = await response.json();
+        resetTurnstile();
 
-        if (result.success) {
-          loadingAlert.close();
-          
-          resultDiv.className = 'result success';
-          resultTitle.textContent = 'Upload Successful!';
-          resultUrl.textContent = result.rawUrl;
-          
-          Swal.fire({
-            title: 'Success!',
-            html: `
-              <p><strong>File:</strong> ${file.name}</p>
-              <p><strong>Size:</strong> ${(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-              <p><strong>URL:</strong> <a href="${result.rawUrl}" target="_blank">${result.rawUrl}</a></p>
-            `,
-            icon: 'success',
-            background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-            color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-          });
-          
-          resetTurnstile();
-          fileInput.value = '';
-          fileInfo.classList.remove('active');
-        } else {
-          throw new Error(result.error || 'Upload failed');
-        }
       } catch (error) {
         loadingAlert.close();
         
-        resultDiv.className = 'result error';
-        resultTitle.textContent = 'Upload Failed';
-        resultUrl.textContent = error.message;
-        
+        apiResponse.className = 'api-response error';
+        responseTitle.textContent = '❌ Network Error';
+        responseContent.textContent = `Error: ${error.message}\n\nThis could be due to:\n- CORS policy restrictions\n- Network connectivity issues\n- Invalid URL\n- Server not responding`;
+
         Swal.fire({
-          title: 'Error',
+          title: 'Network Error',
           text: error.message,
           icon: 'error',
           background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
           color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
         });
-        
-        if (error.message.includes('CAPTCHA')) {
-          resetTurnstile();
-        }
-      }
-    });
 
-    copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(resultUrl.textContent).then(() => {
+        resetTurnstile();
+      }
+    }
+
+    // Examples functionality
+    function loadExample() {
+      const selectedExample = exampleSelect.value;
+      codeExample.value = codeExamples[selectedExample] || '';
+    }
+
+    function runExample() {
+      const code = codeExample.value;
+      if (!code.trim()) {
         Swal.fire({
-          title: 'Copied!',
-          text: 'URL copied to clipboard',
+          title: 'No Code',
+          text: 'Please select an example or write some code',
+          icon: 'warning',
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+        });
+        return;
+      }
+
+      try {
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        let output = [];
+
+        console.log = (...args) => {
+          output.push('LOG: ' + args.join(' '));
+          originalLog.apply(console, args);
+        };
+
+        console.error = (...args) => {
+          output.push('ERROR: ' + args.join(' '));
+          originalError.apply(console, args);
+        };
+
+        // Execute the code
+        eval(code);
+
+        // Restore console
+        console.log = originalLog;
+        console.error = originalError;
+
+        exampleResult.className = 'api-response success';
+        exampleOutput.textContent = output.length > 0 ? output.join('\n') : 'Code executed successfully (no console output)';
+
+        Swal.fire({
+          title: 'Example Executed!',
+          text: 'Check the console and example output below',
           icon: 'success',
           background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
           color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
         });
-      });
-    });
 
-    deleteForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (!turnstileResponse) {
-        Swal.fire({
-          title: 'CAPTCHA Required',
-          text: 'Please complete the CAPTCHA',
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-        return;
-      }
-
-      const filename = filenameInput.value.trim();
-      if (!filename) {
-        Swal.fire({
-          title: 'Error',
-          text: 'Please enter a filename',
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-        return;
-      }
-
-      const loadingAlert = Swal.fire({
-        title: 'Deleting...',
-        html: 'Please wait while we delete the file',
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => Swal.showLoading(),
-        background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-        color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-      });
-
-      try {
-        const response = await fetch('/giftedDelete.php', {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            filename: filename,
-            turnstileResponse: turnstileResponse
-          })
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-          loadingAlert.close();
-          
-          deleteResult.className = 'result success';
-          deleteResultTitle.textContent = 'File Deleted';
-          deleteResultMsg.textContent = `File ${filename} was successfully deleted`;
-          
-          Swal.fire({
-            title: 'Deleted!',
-            text: `File ${filename} was successfully deleted`,
-            icon: 'success',
-            background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-            color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-          });
-          
-          resetTurnstile();
-          filenameInput.value = '';
-        } else {
-          throw new Error(result.error || 'Deletion failed');
-        }
       } catch (error) {
-        loadingAlert.close();
-        
-        deleteResult.className = 'result error';
-        deleteResultTitle.textContent = 'Deletion Failed';
-        deleteResultMsg.textContent = error.message;
-        
+        exampleResult.className = 'api-response error';
+        exampleOutput.textContent = `Error: ${error.message}\n\nStack trace:\n${error.stack}`;
+
         Swal.fire({
-          title: 'Error',
+          title: 'Execution Error',
           text: error.message,
           icon: 'error',
           background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
           color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
         });
-        
-        if (error.message.includes('CAPTCHA')) {
-          resetTurnstile();
-        }
       }
-    });
+    }
 
+    // Playground functionality
+    function runPlayground() {
+      const code = playgroundCode.value;
+      const html = playgroundHtml.value;
+
+      if (!code.trim() && !html.trim()) {
+        Swal.fire({
+          title: 'No Code or HTML',
+          text: 'Please write some code or HTML to run',
+          icon: 'warning',
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+        });
+        return;
+      }
+
+      try {
+        // Set HTML content
+        if (html.trim()) {
+          playgroundPreview.innerHTML = html;
+        }
+
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        let output = [];
+
+        console.log = (...args) => {
+          output.push('LOG: ' + args.join(' '));
+          originalLog.apply(console, args);
+        };
+
+        console.error = (...args) => {
+          output.push('ERROR: ' + args.join(' '));
+          originalError.apply(console, args);
+        };
+
+        // Execute the code
+        if (code.trim()) {
+          eval(code);
+        }
+
+        // Restore console
+        console.log = originalLog;
+        console.error = originalError;
+
+        playgroundResult.className = 'api-response success';
+        playgroundOutput.textContent = output.length > 0 ? output.join('\n') : 'Code executed successfully (no console output)';
+
+        Swal.fire({
+          title: 'Playground Executed!',
+          text: 'Check the live preview and console output',
+          icon: 'success',
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+        });
+
+      } catch (error) {
+        playgroundResult.className = 'api-response error';
+        playgroundOutput.textContent = `Error: ${error.message}\n\nStack trace:\n${error.stack}`;
+
+        Swal.fire({
+          title: 'Execution Error',
+          text: error.message,
+          icon: 'error',
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' : '#0f172a' : 'white'
+        });
+      }
+    }
+
+    function clearPlayground() {
+      playgroundCode.value = '';
+      playgroundHtml.value = '';
+      playgroundPreview.innerHTML = '<p style="color: var(--gray); text-align: center;">Run your code to see the preview</p>';
+      playgroundResult.style.display = 'none';
+      
+      Swal.fire({
+        title: 'Playground Cleared!',
+        text: 'All code and HTML has been cleared',
+        icon: 'info',
+        background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+        color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+      });
+    }
+
+    // Copy functionality
+    function copyToClipboard(text) {
+      navigator.clipboard.writeText(text).then(() => {
+        Swal.fire({
+          title: 'Copied!',
+          text: 'Content copied to clipboard',
+          icon: 'success',
+          timer: 1500,
+          showConfirmButton: false,
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+        });
+      }).catch(() => {
+        Swal.fire({
+          title: 'Copy Failed',
+          text: 'Could not copy to clipboard',
+          icon: 'error',
+          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
+          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
+        });
+      });
+    }
+
+    // Event listeners
     document.addEventListener('DOMContentLoaded', () => {
       setInitialTheme();
-      themeToggle.addEventListener('click', toggleTheme);
+      loadExample(); // Load initial example
       
-      // Initialize Turnstile widgets only once
+      // Initialize Turnstile widgets
       const turnstileContainers = document.querySelectorAll('.cf-turnstile');
       turnstileContainers.forEach(container => {
         const sitekey = container.getAttribute('data-sitekey');
         const theme = body.getAttribute('data-theme');
         
-        // Only render if not already rendered
         if (!container.hasChildNodes()) {
           const widgetId = window.turnstile?.render(container, {
             sitekey: sitekey,
@@ -1001,17 +1632,62 @@
           });
         }
       });
-      
-      setTimeout(() => {
-        document.querySelector('.card').classList.add('fade-in');
-      }, 100);
-      
-      window.addEventListener('resize', () => {
-        if (window.innerWidth >= 992) {
-          closeSidebar();
-        }
+    });
+
+    // Theme toggle
+    themeToggle.addEventListener('click', toggleTheme);
+
+    // Sidebar controls
+    menuToggle.addEventListener('click', toggleSidebar);
+    sidebarClose.addEventListener('click', closeSidebar);
+    sidebarOverlay.addEventListener('click', closeSidebar);
+
+    // Navigation
+    navLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const pageId = link.getAttribute('data-page');
+        switchPage(pageId);
+        closeSidebar();
       });
     });
+
+    // API method change handler
+    apiMethodSelect.addEventListener('change', () => {
+      const requestBodyGroup = document.getElementById('request-body-group');
+      if (['GET', 'DELETE'].includes(apiMethodSelect.value)) {
+        requestBodyGroup.style.display = 'none';
+      } else {
+        requestBodyGroup.style.display = 'flex';
+      }
+    });
+
+    // API Tester
+    testApiBtn.addEventListener('click', testAPI);
+    copyResponseBtn.addEventListener('click', () => {
+      copyToClipboard(responseContent.textContent);
+    });
+
+    // Examples
+    exampleSelect.addEventListener('change', loadExample);
+    runExampleBtn.addEventListener('click', runExample);
+    copyCodeBtn.addEventListener('click', () => {
+      copyToClipboard(codeExample.value);
+    });
+
+    // Playground
+    runPlaygroundBtn.addEventListener('click', runPlayground);
+    clearPlaygroundBtn.addEventListener('click', clearPlayground);
+
+    // Responsive handling
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 992) {
+        closeSidebar();
+      }
+    });
+
+    // Make functions globally available for Turnstile
+    window.onTurnstileSuccess = onTurnstileSuccess;
   </script>
 </body>
 </html>
