@@ -1,1693 +1,875 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="description" content="Ladybug API Manager - Modern interface for managing Ladybug.js APIs">
-  <title>LADYBUG API MANAGER</title>
-  <link rel="icon" href="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg">
-  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <!-- Include Ladybug.js V9 -->
-  <script src="ladybug-v9.js"></script>
-  <style>
-    :root {
-      --primary: #ff6b6b;
-      --primary-dark: #e55555;
-      --secondary: #4ecdc4;
-      --accent: #45b7d1;
-      --dark: #0f172a;
-      --dark-light: #1e293b;
-      --light: #f8fafc;
-      --gray: #94a3b8;
-      --success: #10b981;
-      --danger: #ef4444;
-      --warning: #f59e0b;
-      --ladybug-red: #dc2626;
-      --ladybug-orange: #ea580c;
-    }
-
-    /* Light mode variables */
-    [data-theme="light"] {
-      --dark: #f1f5f9;
-      --dark-light: #ffffff;
-      --light: #0f172a;
-      --gray: #64748b;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background: linear-gradient(135deg, var(--dark) 0%, #1a202c 100%);
-      color: var(--light);
-      min-height: 100vh;
-      display: flex;
-      overflow-x: hidden;
-    }
-
-    /* Sidebar */
-    .sidebar {
-      width: 300px;
-      background: linear-gradient(180deg, var(--dark-light) 0%, #2d3748 100%);
-      padding: 1.5rem;
-      position: fixed;
-      height: 100vh;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      z-index: 1000;
-      border-top-right-radius: 25px;
-      border-bottom-right-radius: 25px;
-      transform: translateX(-100%);
-      box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
-      overflow-y: auto;
-      backdrop-filter: blur(10px);
-    }
-
-    .sidebar.active {
-      transform: translateX(0);
-    }
-
-    .sidebar-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .sidebar-close {
-      background: none;
-      border: none;
-      color: var(--gray);
-      font-size: 1.5rem;
-      cursor: pointer;
-      display: none;
-      transition: all 0.2s ease;
-    }
-
-    .sidebar-close:hover {
-      color: var(--primary);
-      transform: rotate(90deg);
-    }
-
-    .logo-container {
-      display: flex;
-      align-items: center;
-    }
-
-    .logo {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      margin-right: 12px;
-      border: 2px solid var(--primary);
-      padding: 2px;
-    }
-
-    .logo-text {
-      font-weight: 700;
-      font-size: 1.3rem;
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .nav-menu {
-      list-style: none;
-    }
-
-    .nav-item {
-      margin-bottom: 0.5rem;
-    }
-
-    .nav-link {
-      display: flex;
-      align-items: center;
-      padding: 1rem 1.25rem;
-      border-radius: 12px;
-      color: var(--gray);
-      text-decoration: none;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .nav-link::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      transition: all 0.3s ease;
-      z-index: -1;
-    }
-
-    .nav-link:hover::before {
-      left: 0;
-    }
-
-    .nav-link:hover {
-      color: white;
-      transform: translateX(5px);
-    }
-
-    .nav-link.active {
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      color: white;
-      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-    }
-
-    .nav-link i {
-      margin-right: 15px;
-      font-size: 1.2rem;
-      width: 20px;
-      text-align: center;
-    }
-
-    /* Main Content */
-    .main-content {
-      flex: 1;
-      min-height: 100vh;
-      transition: all 0.3s ease;
-      display: flex;
-      flex-direction: column;
-      width: 100%;
-    }
-
-    /* Header */
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 1.5rem 2rem;
-      background: linear-gradient(135deg, var(--dark-light) 0%, #2d3748 100%);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      backdrop-filter: blur(10px);
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .menu-toggle {
-      background: none;
-      border: none;
-      color: var(--light);
-      font-size: 1.5rem;
-      cursor: pointer;
-      display: none;
-      transition: all 0.2s ease;
-    }
-
-    .menu-toggle:hover {
-      color: var(--primary);
-      transform: scale(1.1);
-    }
-
-    .header-logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      border: 2px solid var(--primary);
-      padding: 2px;
-    }
-
-    .header-title {
-      font-size: 1.4rem;
-      font-weight: 700;
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .theme-toggle {
-      background: none;
-      border: none;
-      color: var(--light);
-      font-size: 1.3rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      padding: 8px;
-      border-radius: 50%;
-    }
-
-    .theme-toggle:hover {
-      background: rgba(255, 107, 107, 0.1);
-      color: var(--primary);
-      transform: rotate(180deg);
-    }
-
-    /* Content */
-    .content {
-      padding: 2rem;
-      flex: 1;
-      width: 100%;
-      max-width: 1400px;
-      margin: 0 auto;
-    }
-
-    /* Card */
-    .card {
-      background: linear-gradient(135deg, var(--dark-light) 0%, #2d3748 100%);
-      border-radius: 20px;
-      padding: 2rem;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-      margin-bottom: 2rem;
-      width: 100%;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
-    }
-
-    .card-title {
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin-bottom: 2rem;
-      text-align: center;
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* API Test Area */
-    .api-test-area {
-      border: 2px dashed var(--primary);
-      border-radius: 15px;
-      padding: 2rem;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      margin-bottom: 2rem;
-      background: rgba(255, 107, 107, 0.05);
-    }
-
-    .api-test-area:hover {
-      border-color: var(--secondary);
-      background: rgba(78, 205, 196, 0.05);
-      transform: translateY(-2px);
-    }
-
-    .api-test-area i {
-      font-size: 3rem;
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 1rem;
-    }
-
-    .api-test-area p {
-      margin-bottom: 0.5rem;
-      color: var(--light);
-      font-size: 1.1rem;
-      font-weight: 500;
-    }
-
-    .api-test-area small {
-      color: var(--gray);
-      font-size: 0.9rem;
-    }
-
-    /* Form Elements */
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .form-label {
-      font-weight: 600;
-      color: var(--light);
-      font-size: 1rem;
-    }
-
-    .form-input, .form-select, .form-textarea {
-      background: rgba(0, 0, 0, 0.1);
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 1rem 1.25rem;
-      color: var(--light);
-      font-family: inherit;
-      width: 100%;
-      transition: all 0.3s ease;
-      font-size: 1rem;
-    }
-
-    .form-input:focus, .form-select:focus, .form-textarea:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
-      background: rgba(255, 107, 107, 0.05);
-    }
-
-    .form-textarea {
-      min-height: 120px;
-      resize: vertical;
-      font-family: 'Courier New', monospace;
-    }
-
-    /* Buttons */
-    .btn {
-      padding: 1rem 2rem;
-      border-radius: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      border: none;
-      font-size: 1rem;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: all 0.5s ease;
-    }
-
-    .btn:hover::before {
-      left: 100%;
-    }
-
-    .btn-primary {
-      background: linear-gradient(45deg, var(--primary), var(--primary-dark));
-      color: white;
-      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
-    }
-
-    .btn-secondary {
-      background: linear-gradient(45deg, var(--secondary), var(--accent));
-      color: white;
-      box-shadow: 0 4px 15px rgba(78, 205, 196, 0.3);
-    }
-
-    .btn-secondary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 25px rgba(78, 205, 196, 0.4);
-    }
-
-    .btn:disabled {
-      background: var(--gray);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .btn:disabled::before {
-      display: none;
-    }
-
-    /* API Response */
-    .api-response {
-      margin-top: 2rem;
-      padding: 2rem;
-      border-radius: 15px;
-      display: none;
-      width: 100%;
-      border-left: 4px solid var(--primary);
-    }
-
-    .api-response.success {
-      background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
-      border-left-color: var(--success);
-      display: block;
-    }
-
-    .api-response.error {
-      background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
-      border-left-color: var(--danger);
-      display: block;
-    }
-
-    .response-title {
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: var(--light);
-      font-size: 1.2rem;
-    }
-
-    .response-content {
-      background: rgba(0, 0, 0, 0.2);
-      border-radius: 8px;
-      padding: 1rem;
-      font-family: 'Courier New', monospace;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: var(--light);
-      max-height: 400px;
-      overflow-y: auto;
-    }
-
-    /* Code Editor */
-    .code-editor {
-      background: #1a1a1a;
-      border: 2px solid rgba(255, 255, 255, 0.1);
-      border-radius: 12px;
-      padding: 1rem;
-      font-family: 'Courier New', monospace;
-      color: #f8f8f2;
-      min-height: 200px;
-      resize: vertical;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .code-editor:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
-    }
-
-    /* Ladybug Features Grid */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 1.5rem;
-      margin-top: 2rem;
-    }
-
-    .feature-card {
-      background: linear-gradient(135deg, rgba(255, 107, 107, 0.1), rgba(78, 205, 196, 0.1));
-      border-radius: 15px;
-      padding: 1.5rem;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      transition: all 0.3s ease;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
-    }
-
-    .feature-icon {
-      font-size: 2rem;
-      background: linear-gradient(45deg, var(--primary), var(--secondary));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 1rem;
-    }
-
-    .feature-title {
-      font-size: 1.2rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: var(--light);
-    }
-
-    .feature-description {
-      color: var(--gray);
-      font-size: 0.9rem;
-      line-height: 1.5;
-    }
-
-    /* Turnstile */
-    .cf-turnstile-container {
-      margin: 2rem auto;
-      display: flex;
-      justify-content: center;
-    }
-
-    .cf-turnstile {
-      transform: scale(0.9);
-      transform-origin: center;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 2rem;
-      background: linear-gradient(135deg, var(--dark-light) 0%, #2d3748 100%);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      margin-top: auto;
-    }
-
-    .footer p {
-      margin-bottom: 0.5rem;
-      color: var(--gray);
-      font-size: 0.9rem;
-    }
-
-    .footer a {
-      color: var(--primary);
-      text-decoration: none;
-      font-weight: 600;
-      transition: all 0.2s ease;
-    }
-
-    .footer a:hover {
-      color: var(--secondary);
-      text-decoration: underline;
-    }
-
-    /* Responsive */
-    @media (min-width: 992px) {
-      .sidebar {
-        transform: translateX(0);
-      }
-      .main-content {
-        margin-left: 300px;
-        width: calc(100% - 300px);
-      }
-    }
-
-    @media (max-width: 991px) {
-      .menu-toggle {
-        display: block;
-      }
-      .sidebar-close {
-        display: block;
-      }
-      .header-title {
-        font-size: 1.2rem;
-      }
-      .sidebar {
-        width: 280px;
-      }
-    }
-
-    @media (max-width: 576px) {
-      .content {
-        padding: 1rem;
-      }
-      .card {
-        padding: 1.5rem;
-      }
-      .api-test-area {
-        padding: 1.5rem;
-      }
-      .api-test-area i {
-        font-size: 2.5rem;
-      }
-      .card-title {
-        font-size: 1.5rem;
-      }
-      .btn {
-        width: 100%;
-      }
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    /* Animations */
-    @keyframes ladybugFly {
-      0% { transform: translateX(-10px) rotate(0deg); }
-      50% { transform: translateX(10px) rotate(5deg); }
-      100% { transform: translateX(-10px) rotate(0deg); }
-    }
-
-    @keyframes fadeInUp {
-      from { 
-        opacity: 0; 
-        transform: translateY(30px); 
-      }
-      to { 
-        opacity: 1; 
-        transform: translateY(0); 
-      }
-    }
-
-    .fade-in-up {
-      animation: fadeInUp 0.6s ease forwards;
-    }
-
-    .ladybug-animate {
-      animation: ladybugFly 3s ease-in-out infinite;
-    }
-
-    /* Page transitions */
-    .page {
-      display: none;
-    }
-
-    .page.active {
-      display: block;
-    }
-
-    /* Overlay for mobile sidebar */
-    .sidebar-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.6);
-      z-index: 999;
-      opacity: 0;
-      visibility: hidden;
-      transition: all 0.3s ease;
-      backdrop-filter: blur(5px);
-    }
-
-    .sidebar-overlay.active {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    /* Loading animation */
-    .loading-spinner {
-      display: inline-block;
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-radius: 50%;
-      border-top-color: white;
-      animation: spin 1s ease-in-out infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ladybug CDN - Comprehensive API Service</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header .ladybug-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .service-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid #e0e0e0;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .service-card .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .service-card h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .service-card p {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .service-card .endpoints {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .service-card .endpoints h4 {
+            font-size: 0.9rem;
+            color: #667eea;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .service-card .endpoints ul {
+            list-style: none;
+        }
+
+        .service-card .endpoints li {
+            background: #667eea;
+            color: white;
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .demo-section {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .demo-section h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+            font-size: 2rem;
+        }
+
+        .demo-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .demo-tab {
+            background: #f8f9fa;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .demo-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .demo-content {
+            display: none;
+        }
+
+        .demo-content.active {
+            display: block;
+        }
+
+        .demo-form {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .result-box.show {
+            display: block;
+        }
+
+        .result-box pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 0.9rem;
+        }
+
+        .stats-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 50px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+            color: white;
+        }
+
+        .stat-item .number {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stat-item .label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            padding: 40px 0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .footer a {
+            color: white;
+            text-decoration: none;
+            margin: 0 15px;
+            transition: opacity 0.3s ease;
+        }
+
+        .footer a:hover {
+            opacity: 0.7;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2.5rem;
+            }
+            
+            .header .ladybug-icon {
+                font-size: 3rem;
+            }
+            
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .demo-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.error {
+            background: #f44336;
+        }
+    </style>
 </head>
-<body data-theme="dark">
-  <!-- Sidebar Overlay -->
-  <div class="sidebar-overlay"></div>
-
-  <!-- Sidebar -->
-  <aside class="sidebar">
-    <div class="sidebar-header">
-      <div class="logo-container">
-        <img src="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg" alt="Ladybug Logo" class="logo ladybug-animate">
-        <span class="logo-text">Ladybug API</span>
-      </div>
-      <button class="sidebar-close">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-    <ul class="nav-menu">
-      <li class="nav-item">
-        <a href="#" class="nav-link active" data-page="test">
-          <i class="fas fa-bug"></i>
-          <span>API Tester</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="#" class="nav-link" data-page="features">
-          <i class="fas fa-star"></i>
-          <span>Features</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="#" class="nav-link" data-page="examples">
-          <i class="fas fa-code"></i>
-          <span>Code Examples</span>
-        </a>
-      </li>
-      <li class="nav-item">
-        <a href="#" class="nav-link" data-page="playground">
-          <i class="fas fa-play"></i>
-          <span>Playground</span>
-        </a>
-      </li>
-    </ul>
-  </aside>
-
-  <!-- Main Content -->
-  <main class="main-content">
-    <!-- Header -->
-    <header class="header">
-      <div class="header-left">
-        <button class="menu-toggle" aria-label="Toggle menu">
-          <i class="fas fa-bars"></i>
-        </button>
-        <img src="https://telegra.ph/file/c2a4d8d65722553da4c89.jpg" alt="Ladybug Logo" class="header-logo">
-        <h1 class="header-title">Ladybug.js V9 API Manager</h1>
-      </div>
-      <div class="header-actions">
-        <button class="theme-toggle" aria-label="Toggle theme">
-          <i class="fas fa-moon"></i>
-        </button>
-      </div>
-    </header>
-
-    <!-- Content -->
-    <div class="content">
-      <!-- API Tester Page -->
-      <div class="page active" id="test-page">
-        <div class="card fade-in-up">
-          <h2 class="card-title">🐞 Ladybug API Tester</h2>
-          
-          <div class="form-group">
-            <label for="api-method" class="form-label">API Method</label>
-            <select id="api-method" class="form-select">
-              <option value="GET">GET Request</option>
-              <option value="POST">POST Request</option>
-              <option value="PUT">PUT Request</option>
-              <option value="DELETE">DELETE Request</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="api-url" class="form-label">API Endpoint URL</label>
-            <input type="url" id="api-url" class="form-input" placeholder="https://api.example.com/endpoint" required>
-          </div>
-
-          <div class="form-group">
-            <label for="api-headers" class="form-label">Headers (JSON format)</label>
-            <textarea id="api-headers" class="form-textarea" placeholder='{"Content-Type": "application/json", "Authorization": "Bearer token"}'></textarea>
-          </div>
-
-          <div class="form-group" id="request-body-group">
-            <label for="api-body" class="form-label">Request Body (JSON format)</label>
-            <textarea id="api-body" class="form-textarea" placeholder='{"key": "value", "data": "example"}'></textarea>
-          </div>
-
-          <div class="cf-turnstile-container">
-            <div class="cf-turnstile" data-sitekey="0x4AAAAAABAFw6YmZiCTI8D9" data-callback="onTurnstileSuccess" data-theme="dark"></div>
-          </div>
-
-          <button class="btn btn-primary" id="test-api-btn" disabled>
-            <i class="fas fa-rocket"></i> Test API
-          </button>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="ladybug-icon">🐞</div>
+            <h1>Ladybug CDN</h1>
+            <p>Comprehensive API service with CDN, YouTube downloads, AI services, and utility tools. Fast, reliable, and developer-friendly.</p>
         </div>
 
-        <div class="api-response" id="api-response">
-          <h3 class="response-title" id="response-title"></h3>
-          <div class="response-content" id="response-content"></div>
-          <button class="btn btn-secondary" id="copy-response-btn" style="margin-top: 1rem;">
-            <i class="fas fa-copy"></i> Copy Response
-          </button>
-        </div>
-      </div>
-
-      <!-- Features Page -->
-      <div class="page" id="features-page">
-        <div class="card fade-in-up">
-          <h2 class="card-title">🌟 Ladybug.js V9 Features</h2>
-          <div class="features-grid">
-            <div class="feature-card">
-              <div class="feature-icon">
-                <i class="fas fa-rocket"></i>
-              </div>
-              <h3 class="feature-title">Modern ES6+ Classes</h3>
-              <p class="feature-description">Built with modern JavaScript features including Proxy-based element access and async/await support.</p>
+        <!-- Stats Section -->
+        <div class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="number" id="apiCalls">1,234</div>
+                    <div class="label">API Calls Today</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="filesUploaded">567</div>
+                    <div class="label">Files Uploaded</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="ytDownloads">89</div>
+                    <div class="label">YouTube Downloads</div>
+                </div>
+                <div class="stat-item">
+                    <div class="number" id="aiRequests">234</div>
+                    <div class="label">AI Requests</div>
+                </div>
             </div>
+        </div>
+
+        <!-- Services Grid -->
+        <div class="services-grid">
+            <div class="service-card">
+                <div class="icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <h3>CDN Services</h3>
+                <p>Upload and manage files with our fast and reliable CDN. Support for images, videos, documents, and more with automatic organization.</p>
+                <div class="endpoints">
+                    <h4>Endpoints</h4>
+                    <ul>
+                        <li>POST /ladybug/upload</li>
+                        <li>POST /api/ladybug/upload</li>
+                        <li>POST /api/ladybug/batch-upload</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="icon"><i class="fab fa-youtube"></i></div>
+                <h3>YouTube Services</h3>
+                <p>Download YouTube videos as MP3 or MP4, get video information, and access various quality options. Fast and reliable downloads.</p>
+                <div class="endpoints">
+                    <h4>Endpoints</h4>
+                    <ul>
+                        <li>POST /api/ladybug/ytmp3</li>
+                        <li>POST /api/ladybug/ytmp4</li>
+                        <li>GET /api/ladybug/ytinfo</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="icon"><i class="fas fa-robot"></i></div>
+                <h3>AI Services</h3>
+                <p>Leverage artificial intelligence for text generation, image analysis, and more. Powered by advanced machine learning models.</p>
+                <div class="endpoints">
+                    <h4>Endpoints</h4>
+                    <ul>
+                        <li>POST /api/ladybug/ai/text</li>
+                        <li>POST /api/ladybug/ai/image-analysis</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="service-card">
+                <div class="icon"><i class="fas fa-tools"></i></div>
+                <h3>Utility Tools</h3>
+                <p>Essential developer tools including QR code generation, URL shortening, password generation, and more useful utilities.</p>
+                <div class="endpoints">
+                    <h4>Endpoints</h4>
+                    <ul>
+                        <li>POST /api/ladybug/qr-generate</li>
+                        <li>POST /api/ladybug/shorten-url</li>
+                        <li>GET /api/ladybug/generate-password</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Demo Section -->
+        <div class="demo-section">
+            <h2>Try Our APIs</h2>
             
-            <div class="feature-card">
-              <div class="feature-icon">
-                <i class="fas fa-magic"></i>
-              </div>
-              <h3 class="feature-title">Web Animations API</h3>
-              <p class="feature-description">Powerful animation system using the native Web Animations API for smooth, performant animations.</p>
+            <div class="demo-tabs">
+                <button class="demo-tab active" onclick="showDemo('upload')">File Upload</button>
+                <button class="demo-tab" onclick="showDemo('youtube')">YouTube Download</button>
+                <button class="demo-tab" onclick="showDemo('ai')">AI Text Generation</button>
+                <button class="demo-tab" onclick="showDemo('qr')">QR Generator</button>
+                <button class="demo-tab" onclick="showDemo('password')">Password Generator</button>
             </div>
-            
-            <div class="feature-card">
-              <div class="feature-icon">
-                <i class="fas fa-eye"></i>
-              </div>
-              <h3 class="feature-title">Observer APIs</h3>
-              <p class="feature-description">Built-in support for Intersection, Mutation, and Resize Observers for reactive programming.</p>
+
+            <!-- File Upload Demo -->
+            <div class="demo-content active" id="upload-demo">
+                <div class="demo-form">
+                    <div class="form-group">
+                        <label for="uploadFile">Select File</label>
+                        <input type="file" id="uploadFile" accept="*/*">
+                    </div>
+                    <button class="btn" onclick="uploadFile()">
+                        <i class="fas fa-upload"></i>
+                        Upload File
+                    </button>
+                    <div class="result-box" id="upload-result"></div>
+                </div>
             </div>
-            
-            <div class="feature-card">
-              <div class="feature-icon">
-                <i class="fas fa-puzzle-piece"></i>
-              </div>
-              <h3 class="feature-title">Web Components</h3>
-              <p class="feature-description">Native Web Components support for creating reusable custom elements.</p>
+
+            <!-- YouTube Download Demo -->
+            <div class="demo-content" id="youtube-demo">
+                <div class="demo-form">
+                    <div class="form-group">
+                        <label for="youtubeUrl">YouTube URL</label>
+                        <input type="url" id="youtubeUrl" placeholder="https://www.youtube.com/watch?v=...">
+                    </div>
+                    <div class="form-group">
+                        <label for="downloadType">Download Type</label>
+                        <select id="downloadType">
+                            <option value="mp3">MP3 (Audio Only)</option>
+                            <option value="mp4">MP4 (Video)</option>
+                            <option value="info">Video Info</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="downloadYoutube()">
+                        <i class="fab fa-youtube"></i>
+                        Process Video
+                    </button>
+                    <div class="result-box" id="youtube-result"></div>
+                </div>
             </div>
-            
-            <div class="feature-card">
-              <div class="feature-icon">
-                <i class="fas fa-mobile-alt"></i>
-              </div>
-              <h3 class="feature-title">PWA Utilities</h3>
-              <p class="feature-description">Progressive Web App utilities including service worker registration and offline support.</p>
+
+            <!-- AI Text Generation Demo -->
+            <div class="demo-content" id="ai-demo">
+                <div class="demo-form">
+                    <div class="form-group">
+                        <label for="aiPrompt">Enter your prompt</label>
+                        <textarea id="aiPrompt" rows="4" placeholder="Write a creative story about..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="maxTokens">Max Tokens</label>
+                        <input type="number" id="maxTokens" value="150" min="50" max="500">
+                    </div>
+                    <button class="btn" onclick="generateText()">
+                        <i class="fas fa-magic"></i>
+                        Generate Text
+                    </button>
+                    <div class="result-box" id="ai-result"></div>
+                </div>
             </div>
-            
-            <div class="feature-card">
-              <div class="feature-icon">
-                <i class="fas fa-database"></i>
-              </div>
-              <h3 class="feature-title">State Management</h3>
-              <p class="feature-description">Built-in reactive state management with data binding and change detection.</p>
+
+            <!-- QR Generator Demo -->
+            <div class="demo-content" id="qr-demo">
+                <div class="demo-form">
+                    <div class="form-group">
+                        <label for="qrText">Text to encode</label>
+                        <textarea id="qrText" rows="3" placeholder="Enter text, URL, or any data..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="qrSize">QR Code Size</label>
+                        <select id="qrSize">
+                            <option value="150">150x150</option>
+                            <option value="200" selected>200x200</option>
+                            <option value="300">300x300</option>
+                            <option value="400">400x400</option>
+                        </select>
+                    </div>
+                    <button class="btn" onclick="generateQR()">
+                        <i class="fas fa-qrcode"></i>
+                        Generate QR Code
+                    </button>
+                    <div class="result-box" id="qr-result"></div>
+                </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Examples Page -->
-      <div class="page" id="examples-page">
-        <div class="card fade-in-up">
-          <h2 class="card-title">💻 Code Examples</h2>
-          
-          <div class="form-group">
-            <label for="example-select" class="form-label">Select Example</label>
-            <select id="example-select" class="form-select">
-              <option value="basic">Basic DOM Manipulation</option>
-              <option value="ajax">AJAX Requests</option>
-              <option value="animations">Animations</option>
-              <option value="events">Event Handling</option>
-              <option value="state">State Management</option>
-              <option value="observers">Observer APIs</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Code Example</label>
-            <textarea id="code-example" class="code-editor" readonly></textarea>
-          </div>
-
-          <button class="btn btn-secondary" id="run-example-btn">
-            <i class="fas fa-play"></i> Run Example
-          </button>
-          <button class="btn btn-primary" id="copy-code-btn">
-            <i class="fas fa-copy"></i> Copy Code
-          </button>
-        </div>
-
-        <div class="api-response" id="example-result">
-          <h3 class="response-title">Example Output</h3>
-          <div class="response-content" id="example-output"></div>
-        </div>
-      </div>
-
-      <!-- Playground Page -->
-      <div class="page" id="playground-page">
-        <div class="card fade-in-up">
-          <h2 class="card-title">🎮 Ladybug.js Playground</h2>
-          
-          <div class="form-group">
-            <label for="playground-code" class="form-label">Write Your Ladybug.js Code</label>
-            <textarea id="playground-code" class="code-editor" placeholder="// Write your Ladybug.js code here
-// Example:
-const $ = new Ladybug();
-$('#myElement').text('Hello Ladybug!');"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="playground-html" class="form-label">HTML Sandbox</label>
-            <textarea id="playground-html" class="form-textarea" placeholder="<div id='myElement'>Original Text</div>"></textarea>
-          </div>
-
-          <button class="btn btn-primary" id="run-playground-btn">
-            <i class="fas fa-play"></i> Run Code
-          </button>
-          <button class="btn btn-secondary" id="clear-playground-btn">
-            <i class="fas fa-trash"></i> Clear All
-          </button>
+            <!-- Password Generator Demo -->
+            <div class="demo-content" id="password-demo">
+                <div class="demo-form">
+                    <div class="form-group">
+                        <label for="passwordLength">Password Length</label>
+                        <input type="number" id="passwordLength" value="12" min="4" max="50">
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="includeUppercase" checked> Include Uppercase
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="includeLowercase" checked> Include Lowercase
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="includeNumbers" checked> Include Numbers
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="includeSymbols" checked> Include Symbols
+                        </label>
+                    </div>
+                    <button class="btn" onclick="generatePassword()">
+                        <i class="fas fa-key"></i>
+                        Generate Password
+                    </button>
+                    <div class="result-box" id="password-result"></div>
+                </div>
+            </div>
         </div>
 
-        <div class="card">
-          <h3 class="card-title">🖥️ Live Preview</h3>
-          <div id="playground-preview" style="border: 2px solid var(--gray); border-radius: 8px; padding: 1rem; min-height: 200px; background: rgba(255, 255, 255, 0.05);">
-            <p style="color: var(--gray); text-align: center;">Run your code to see the preview</p>
-          </div>
+        <!-- Footer -->
+        <div class="footer">
+            <p>© 2024 Ladybug CDN. All rights reserved.</p>
+            <div style="margin-top: 20px;">
+                <a href="/api/docs"><i class="fas fa-book"></i> API Documentation</a>
+                <a href="/api/info"><i class="fas fa-info-circle"></i> Service Info</a>
+                <a href="/health"><i class="fas fa-heartbeat"></i> Health Check</a>
+            </div>
         </div>
-
-        <div class="api-response" id="playground-result">
-          <h3 class="response-title">Console Output</h3>
-          <div class="response-content" id="playground-output"></div>
-        </div>
-      </div>
     </div>
 
-    <footer class="footer">
-      <p><i>🐞 Ladybug.js V9 - Modern JavaScript Library</i></p>
-      <p><b>Features:</b> <i>ES6+ Classes, Web APIs, Reactive State Management</i></p>
-      <a href="https://www.giftedtech.web.id" class="text-blue-500 hover:underline">©2024-2025<b> Gifted Tech</b></a>
-    </footer>
-  </main>
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
 
-  <script>
-    // Global variables
-    const body = document.body;
-    const themeToggle = document.querySelector('.theme-toggle');
-    const menuToggle = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    const sidebarClose = document.querySelector('.sidebar-close');
-    const sidebarOverlay = document.querySelector('.sidebar-overlay');
-    const navLinks = document.querySelectorAll('.nav-link');
-    const pages = document.querySelectorAll('.page');
-
-    // API Tester elements
-    const apiMethodSelect = document.getElementById('api-method');
-    const apiUrlInput = document.getElementById('api-url');
-    const apiHeadersTextarea = document.getElementById('api-headers');
-    const apiBodyTextarea = document.getElementById('api-body');
-    const testApiBtn = document.getElementById('test-api-btn');
-    const apiResponse = document.getElementById('api-response');
-    const responseTitle = document.getElementById('response-title');
-    const responseContent = document.getElementById('response-content');
-    const copyResponseBtn = document.getElementById('copy-response-btn');
-
-    // Examples elements
-    const exampleSelect = document.getElementById('example-select');
-    const codeExample = document.getElementById('code-example');
-    const runExampleBtn = document.getElementById('run-example-btn');
-    const copyCodeBtn = document.getElementById('copy-code-btn');
-    const exampleResult = document.getElementById('example-result');
-    const exampleOutput = document.getElementById('example-output');
-
-    // Playground elements
-    const playgroundCode = document.getElementById('playground-code');
-    const playgroundHtml = document.getElementById('playground-html');
-    const runPlaygroundBtn = document.getElementById('run-playground-btn');
-    const clearPlaygroundBtn = document.getElementById('clear-playground-btn');
-    const playgroundPreview = document.getElementById('playground-preview');
-    const playgroundResult = document.getElementById('playground-result');
-    const playgroundOutput = document.getElementById('playground-output');
-
-    let turnstileResponse = null;
-    let turnstileWidgets = [];
-
-    // Code examples data
-    const codeExamples = {
-      basic: `// Basic DOM Manipulation with Ladybug.js
-const $ = new Ladybug();
-
-// Select elements and modify content
-$('#title').text('Welcome to Ladybug.js!');
-$('.description').html('<strong>Modern JavaScript Library</strong>');
-
-// Add CSS classes and styles
-$('#container').addClass('active').css({
-  'background-color': '#ff6b6b',
-  'padding': '20px',
-  'border-radius': '10px'
-});
-
-// Chain multiple operations
-$('.button')
-  .text('Click Me!')
-  .addClass('btn-primary')
-  .css('cursor', 'pointer');`,
-
-      ajax: `// AJAX Requests with Ladybug.js
-const $ = new Ladybug();
-
-// GET Request
-$.ajax({
-  url: 'https://jsonplaceholder.typicode.com/posts/1',
-  method: 'GET',
-  success: function(data) {
-    console.log('GET Success:', data);
-    $('#result').text(JSON.stringify(data, null, 2));
-  },
-  error: function(error) {
-    console.error('GET Error:', error);
-  }
-});
-
-// POST Request with data
-$.ajax({
-  url: 'https://jsonplaceholder.typicode.com/posts',
-  method: 'POST',
-  data: {
-    title: 'Ladybug.js Post',
-    body: 'This is a test post from Ladybug.js',
-    userId: 1
-  },
-  success: function(data) {
-    console.log('POST Success:', data);
-  }
-});`,
-
-      animations: `// Animations with Ladybug.js
-const $ = new Ladybug();
-
-// Fade in animation
-$('#element1').fadeIn(1000);
-
-// Slide animations
-$('#element2').slideDown(500);
-$('#element3').slideUp(300);
-
-// Custom animations using Web Animations API
-$('#element4').animate([
-  { transform: 'translateX(0px)', opacity: 1 },
-  { transform: 'translateX(100px)', opacity: 0.5 },
-  { transform: 'translateX(0px)', opacity: 1 }
-], {
-  duration: 2000,
-  iterations: Infinity,
-  easing: 'ease-in-out'
-});
-
-// Chained animations
-$('#element5')
-  .fadeOut(500)
-  .then(() => {
-    $('#element5').text('Animation Complete!').fadeIn(500);
-  });`,
-
-      events: `// Event Handling with Ladybug.js
-const $ = new Ladybug();
-
-// Click events
-$('#button1').on('click', function(e) {
-  console.log('Button clicked!', e);
-  $(this).text('Clicked!').addClass('clicked');
-});
-
-// Multiple event types
-$('#input1').on('focus blur keyup', function(e) {
-  console.log('Input event:', e.type, this.value);
-});
-
-// Event delegation
-$(document).on('click', '.dynamic-button', function() {
-  console.log('Dynamic button clicked:', this.textContent);
-});
-
-// Custom events
-$('#trigger').on('click', function() {
-  $('#target').trigger('customEvent', { data: 'Hello!' });
-});
-
-$('#target').on('customEvent', function(e, data) {
-  console.log('Custom event received:', data);
-});
-
-// Remove events
-$('#remove-events').on('click', function() {
-  $('#button1').off('click');
-  console.log('Click event removed from button1');
-});`,
-
-      state: `// State Management with Ladybug.js
-const $ = new Ladybug();
-
-// Create reactive state
-const state = $.createState({
-  count: 0,
-  user: {
-    name: 'John Doe',
-    email: 'john@example.com'
-  },
-  todos: []
-});
-
-// Watch for state changes
-state.watch('count', (newValue, oldValue) => {
-  console.log(\`Count changed from \${oldValue} to \${newValue}\`);
-  $('#counter').text(newValue);
-});
-
-state.watch('user.name', (newValue) => {
-  $('#username').text(newValue);
-});
-
-// Update state
-$('#increment').on('click', () => {
-  state.count++;
-});
-
-$('#decrement').on('click', () => {
-  state.count--;
-});
-
-$('#update-user').on('click', () => {
-  state.user.name = 'Jane Smith';
-  state.user.email = 'jane@example.com';
-});
-
-// Computed properties
-const computedFullName = state.computed(() => {
-  return \`\${state.user.name} <\${state.user.email}>\`;
-});
-
-console.log('Computed full name:', computedFullName.value);`,
-
-      observers: `// Observer APIs with Ladybug.js
-const $ = new Ladybug();
-
-// Intersection Observer
-const intersectionObserver = $.observe.intersection('.fade-in-element', {
-  threshold: 0.5,
-  callback: (entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        $(entry.target).addClass('visible').fadeIn(1000);
-      }
-    });
-  }
-});
-
-// Mutation Observer
-const mutationObserver = $.observe.mutation('#dynamic-content', {
-  childList: true,
-  subtree: true,
-  callback: (mutations) => {
-    mutations.forEach(mutation => {
-      console.log('DOM changed:', mutation.type);
-      if (mutation.addedNodes.length > 0) {
-        console.log('Nodes added:', mutation.addedNodes);
-      }
-    });
-  }
-});
-
-// Resize Observer
-const resizeObserver = $.observe.resize('.resizable-element', {
-  callback: (entries) => {
-    entries.forEach(entry => {
-      const { width, height } = entry.contentRect;
-      console.log(\`Element resized: \${width}x\${height}\`);
-      $(entry.target).attr('data-size', \`\${width}x\${height}\`);
-    });
-  }
-});
-
-// Performance Observer
-const performanceObserver = $.observe.performance({
-  entryTypes: ['navigation', 'paint'],
-  callback: (entries) => {
-    entries.forEach(entry => {
-      console.log('Performance entry:', entry.name, entry.duration);
-    });
-  }
-});`
-    };
-
-    // Theme management
-    function toggleTheme() {
-      const currentTheme = body.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      body.setAttribute('data-theme', newTheme);
-      localStorage.setItem('theme', newTheme);
-      
-      const icon = themeToggle.querySelector('i');
-      icon.className = newTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-      
-      // Update Turnstile theme
-      updateTurnstileTheme(newTheme);
-    }
-
-    function setInitialTheme() {
-      const savedTheme = localStorage.getItem('theme') || 'dark';
-      body.setAttribute('data-theme', savedTheme);
-      
-      const icon = themeToggle.querySelector('i');
-      icon.className = savedTheme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
-    }
-
-    function updateTurnstileTheme(theme) {
-      if (window.turnstile) {
-        turnstileWidgets.forEach(widget => {
-          const iframe = widget.container.querySelector('iframe');
-          if (iframe) {
-            iframe.contentWindow.postMessage({
-              event: 'turnstile.theme',
-              theme: theme,
-              widgetId: widget.id
-            }, 'https://challenges.cloudflare.com');
-          }
-        });
-      }
-    }
-
-    // Sidebar management
-    function toggleSidebar() {
-      sidebar.classList.toggle('active');
-      sidebarOverlay.classList.toggle('active');
-    }
-
-    function closeSidebar() {
-      sidebar.classList.remove('active');
-      sidebarOverlay.classList.remove('active');
-    }
-
-    // Navigation
-    function switchPage(pageId) {
-      pages.forEach(page => page.classList.remove('active'));
-      document.getElementById(`${pageId}-page`).classList.add('active');
-      
-      navLinks.forEach(link => link.classList.remove('active'));
-      document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
-    }
-
-    // Turnstile callback
-    function onTurnstileSuccess(token) {
-      turnstileResponse = token;
-      testApiBtn.disabled = false;
-    }
-
-    function resetTurnstile() {
-      turnstileResponse = null;
-      testApiBtn.disabled = true;
-      
-      const currentPage = document.querySelector('.page.active');
-      const widgetContainer = currentPage.querySelector('.cf-turnstile');
-      if (widgetContainer && window.turnstile) {
-        widgetContainer.innerHTML = '';
-        const sitekey = widgetContainer.getAttribute('data-sitekey');
-        const theme = body.getAttribute('data-theme');
-        
-        const widgetId = window.turnstile.render(widgetContainer, {
-          sitekey: sitekey,
-          theme: theme,
-          callback: onTurnstileSuccess
-        });
-        
-        const widgetIndex = turnstileWidgets.findIndex(w => w.container === widgetContainer);
-        if (widgetIndex !== -1) {
-          turnstileWidgets[widgetIndex].id = widgetId;
-        }
-      }
-    }
-
-    // API Testing functionality
-    async function testAPI() {
-      if (!turnstileResponse) {
-        Swal.fire({
-          title: 'CAPTCHA Required',
-          text: 'Please complete the CAPTCHA verification',
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-        return;
-      }
-
-      const method = apiMethodSelect.value;
-      const url = apiUrlInput.value.trim();
-      const headersText = apiHeadersTextarea.value.trim();
-      const bodyText = apiBodyTextarea.value.trim();
-
-      if (!url) {
-        Swal.fire({
-          title: 'URL Required',
-          text: 'Please enter an API endpoint URL',
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-        return;
-      }
-
-      let headers = {};
-      if (headersText) {
-        try {
-          headers = JSON.parse(headersText);
-        } catch (e) {
-          Swal.fire({
-            title: 'Invalid Headers',
-            text: 'Headers must be valid JSON format',
-            icon: 'error',
-            background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-            color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-          });
-          return;
-        }
-      }
-
-      let body = null;
-      if (bodyText && ['POST', 'PUT'].includes(method)) {
-        try {
-          body = JSON.parse(bodyText);
-        } catch (e) {
-          Swal.fire({
-            title: 'Invalid Body',
-            text: 'Request body must be valid JSON format',
-            icon: 'error',
-            background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-            color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-          });
-          return;
-        }
-      }
-
-      const loadingAlert = Swal.fire({
-        title: 'Testing API...',
-        html: `<div class="loading-spinner"></div><br>Making ${method} request to ${url}`,
-        allowOutsideClick: false,
-        showConfirmButton: false,
-        didOpen: () => Swal.showLoading(),
-        background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-        color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-      });
-
-      try {
-        const requestOptions = {
-          method: method,
-          headers: {
-            'Content-Type': 'application/json',
-            ...headers
-          }
-        };
-
-        if (body && ['POST', 'PUT'].includes(method)) {
-          requestOptions.body = JSON.stringify(body);
+    <script>
+        // Demo tab switching
+        function showDemo(demoType) {
+            // Hide all demo contents
+            document.querySelectorAll('.demo-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.demo-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected demo content
+            document.getElementById(demoType + '-demo').classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
         }
 
-        const startTime = performance.now();
-        const response = await fetch(url, requestOptions);
-        const endTime = performance.now();
-        const responseTime = Math.round(endTime - startTime);
-
-        const responseData = await response.text();
-        let parsedData;
-        
-        try {
-          parsedData = JSON.parse(responseData);
-        } catch (e) {
-          parsedData = responseData;
+        // Notification system
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
         }
 
-        loadingAlert.close();
-
-        const responseInfo = {
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          responseTime: responseTime,
-          data: parsedData
-        };
-
-        apiResponse.className = response.ok ? 'api-response success' : 'api-response error';
-        responseTitle.textContent = response.ok ? 
-          `✅ Success (${response.status} ${response.statusText})` : 
-          `❌ Error (${response.status} ${response.statusText})`;
-        responseContent.textContent = JSON.stringify(responseInfo, null, 2);
-
-        Swal.fire({
-          title: response.ok ? 'API Test Successful!' : 'API Test Failed',
-          html: `
-            <p><strong>Status:</strong> ${response.status} ${response.statusText}</p>
-            <p><strong>Response Time:</strong> ${responseTime}ms</p>
-            <p><strong>Method:</strong> ${method}</p>
-          `,
-          icon: response.ok ? 'success' : 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-
-        resetTurnstile();
-
-      } catch (error) {
-        loadingAlert.close();
-        
-        apiResponse.className = 'api-response error';
-        responseTitle.textContent = '❌ Network Error';
-        responseContent.textContent = `Error: ${error.message}\n\nThis could be due to:\n- CORS policy restrictions\n- Network connectivity issues\n- Invalid URL\n- Server not responding`;
-
-        Swal.fire({
-          title: 'Network Error',
-          text: error.message,
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-
-        resetTurnstile();
-      }
-    }
-
-    // Examples functionality
-    function loadExample() {
-      const selectedExample = exampleSelect.value;
-      codeExample.value = codeExamples[selectedExample] || '';
-    }
-
-    function runExample() {
-      const code = codeExample.value;
-      if (!code.trim()) {
-        Swal.fire({
-          title: 'No Code',
-          text: 'Please select an example or write some code',
-          icon: 'warning',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-        return;
-      }
-
-      try {
-        // Capture console output
-        const originalLog = console.log;
-        const originalError = console.error;
-        let output = [];
-
-        console.log = (...args) => {
-          output.push('LOG: ' + args.join(' '));
-          originalLog.apply(console, args);
-        };
-
-        console.error = (...args) => {
-          output.push('ERROR: ' + args.join(' '));
-          originalError.apply(console, args);
-        };
-
-        // Execute the code
-        eval(code);
-
-        // Restore console
-        console.log = originalLog;
-        console.error = originalError;
-
-        exampleResult.className = 'api-response success';
-        exampleOutput.textContent = output.length > 0 ? output.join('\n') : 'Code executed successfully (no console output)';
-
-        Swal.fire({
-          title: 'Example Executed!',
-          text: 'Check the console and example output below',
-          icon: 'success',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-
-      } catch (error) {
-        exampleResult.className = 'api-response error';
-        exampleOutput.textContent = `Error: ${error.message}\n\nStack trace:\n${error.stack}`;
-
-        Swal.fire({
-          title: 'Execution Error',
-          text: error.message,
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-      }
-    }
-
-    // Playground functionality
-    function runPlayground() {
-      const code = playgroundCode.value;
-      const html = playgroundHtml.value;
-
-      if (!code.trim() && !html.trim()) {
-        Swal.fire({
-          title: 'No Code or HTML',
-          text: 'Please write some code or HTML to run',
-          icon: 'warning',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-        return;
-      }
-
-      try {
-        // Set HTML content
-        if (html.trim()) {
-          playgroundPreview.innerHTML = html;
+        // File Upload Demo
+        async function uploadFile() {
+            const fileInput = document.getElementById('uploadFile');
+            const resultBox = document.getElementById('upload-result');
+            
+            if (!fileInput.files[0]) {
+                showNotification('Please select a file', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            try {
+                const response = await fetch('/api/ladybug/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                resultBox.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                resultBox.classList.add('show');
+                
+                if (result.success) {
+                    showNotification('File uploaded successfully!');
+                } else {
+                    showNotification('Upload failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Upload error: ' + error.message, 'error');
+            }
         }
 
-        // Capture console output
-        const originalLog = console.log;
-        const originalError = console.error;
-        let output = [];
-
-        console.log = (...args) => {
-          output.push('LOG: ' + args.join(' '));
-          originalLog.apply(console, args);
-        };
-
-        console.error = (...args) => {
-          output.push('ERROR: ' + args.join(' '));
-          originalError.apply(console, args);
-        };
-
-        // Execute the code
-        if (code.trim()) {
-          eval(code);
+        // YouTube Download Demo
+        async function downloadYoutube() {
+            const url = document.getElementById('youtubeUrl').value;
+            const type = document.getElementById('downloadType').value;
+            const resultBox = document.getElementById('youtube-result');
+            
+            if (!url) {
+                showNotification('Please enter a YouTube URL', 'error');
+                return;
+            }
+            
+            let endpoint;
+            switch(type) {
+                case 'mp3':
+                    endpoint = '/api/ladybug/ytmp3';
+                    break;
+                case 'mp4':
+                    endpoint = '/api/ladybug/ytmp4';
+                    break;
+                case 'info':
+                    endpoint = '/api/ladybug/ytinfo?url=' + encodeURIComponent(url);
+                    break;
+            }
+            
+            try {
+                const response = await fetch(endpoint, {
+                    method: type === 'info' ? 'GET' : 'POST',
+                    headers: type !== 'info' ? {
+                        'Content-Type': 'application/json'
+                    } : {},
+                    body: type !== 'info' ? JSON.stringify({ url }) : undefined
+                });
+                
+                const result = await response.json();
+                resultBox.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                resultBox.classList.add('show');
+                
+                if (result.success) {
+                    showNotification('YouTube processing completed!');
+                } else {
+                    showNotification('Processing failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Processing error: ' + error.message, 'error');
+            }
         }
 
-        // Restore console
-        console.log = originalLog;
-        console.error = originalError;
-
-        playgroundResult.className = 'api-response success';
-        playgroundOutput.textContent = output.length > 0 ? output.join('\n') : 'Code executed successfully (no console output)';
-
-        Swal.fire({
-          title: 'Playground Executed!',
-          text: 'Check the live preview and console output',
-          icon: 'success',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-
-      } catch (error) {
-        playgroundResult.className = 'api-response error';
-        playgroundOutput.textContent = `Error: ${error.message}\n\nStack trace:\n${error.stack}`;
-
-        Swal.fire({
-          title: 'Execution Error',
-          text: error.message,
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' : '#0f172a' : 'white'
-        });
-      }
-    }
-
-    function clearPlayground() {
-      playgroundCode.value = '';
-      playgroundHtml.value = '';
-      playgroundPreview.innerHTML = '<p style="color: var(--gray); text-align: center;">Run your code to see the preview</p>';
-      playgroundResult.style.display = 'none';
-      
-      Swal.fire({
-        title: 'Playground Cleared!',
-        text: 'All code and HTML has been cleared',
-        icon: 'info',
-        background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-        color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-      });
-    }
-
-    // Copy functionality
-    function copyToClipboard(text) {
-      navigator.clipboard.writeText(text).then(() => {
-        Swal.fire({
-          title: 'Copied!',
-          text: 'Content copied to clipboard',
-          icon: 'success',
-          timer: 1500,
-          showConfirmButton: false,
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-      }).catch(() => {
-        Swal.fire({
-          title: 'Copy Failed',
-          text: 'Could not copy to clipboard',
-          icon: 'error',
-          background: body.getAttribute('data-theme') === 'light' ? 'white' : '#1e293b',
-          color: body.getAttribute('data-theme') === 'light' ? '#0f172a' : 'white'
-        });
-      });
-    }
-
-    // Event listeners
-    document.addEventListener('DOMContentLoaded', () => {
-      setInitialTheme();
-      loadExample(); // Load initial example
-      
-      // Initialize Turnstile widgets
-      const turnstileContainers = document.querySelectorAll('.cf-turnstile');
-      turnstileContainers.forEach(container => {
-        const sitekey = container.getAttribute('data-sitekey');
-        const theme = body.getAttribute('data-theme');
-        
-        if (!container.hasChildNodes()) {
-          const widgetId = window.turnstile?.render(container, {
-            sitekey: sitekey,
-            theme: theme,
-            callback: onTurnstileSuccess
-          });
-          
-          turnstileWidgets.push({
-            container: container,
-            sitekey: sitekey,
-            id: widgetId
-          });
+        // AI Text Generation Demo
+        async function generateText() {
+            const prompt = document.getElementById('aiPrompt').value;
+            const maxTokens = document.getElementById('maxTokens').value;
+            const resultBox = document.getElementById('ai-result');
+            
+            if (!prompt) {
+                showNotification('Please enter a prompt', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/ladybug/ai/text', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt, maxTokens: parseInt(maxTokens) })
+                });
+                
+                const result = await response.json();
+                resultBox.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                resultBox.classList.add('show');
+                
+                if (result.success) {
+                    showNotification('AI text generated successfully!');
+                } else {
+                    showNotification('Generation failed: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showNotification('AI error: ' + error.message, 'error');
+            }
         }
-      });
-    });
 
-    // Theme toggle
-    themeToggle.addEventListener('click', toggleTheme);
+        // QR Code Generator Demo
+        async function generateQR() {
+            const text = document.getElementById('qrText').value;
+            const size = document.getElementById('qrSize').value;
+            const resultBox = document.getElementById('qr-result');
+            
+            if (!text) {
+                showNotification('Please enter text to encode', 'error');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/ladybug/qr-generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text, size: parseInt(size) })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultBox.innerHTML = `
+                        <div style="text-align: center;">
+                            <img src="${result.data.qrCodeUrl}" alt="QR Code" style="max-width: 100%; border-radius: 8px; margin-bottom: 15px;">
+                            <pre>${JSON.stringify(result, null, 2)}</pre>
+                        </div>
+                    `;
+                    showNotification('QR code generated successfully!');
+                } else {
+                    resultBox.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    showNotification('QR generation failed: ' + result.error, 'error');
+                }
+                
+                resultBox.classList.add('show');
+            } catch (error) {
+                showNotification('QR generation error: ' + error.message, 'error');
+            }
+        }
 
-    // Sidebar controls
-    menuToggle.addEventListener('click', toggleSidebar);
-    sidebarClose.addEventListener('click', closeSidebar);
-    sidebarOverlay.addEventListener('click', closeSidebar);
+        // Password Generator Demo
+        async function generatePassword() {
+            const length = document.getElementById('passwordLength').value;
+            const includeUppercase = document.getElementById('includeUppercase').checked;
+            const includeLowercase = document.getElementById('includeLowercase').checked;
+            const includeNumbers = document.getElementById('includeNumbers').checked;
+            const includeSymbols = document.getElementById('includeSymbols').checked;
+            const resultBox = document.getElementById('password-result');
+            
+            try {
+                const params = new URLSearchParams({
+                    length,
+                    includeUppercase,
+                    includeLowercase,
+                    includeNumbers,
+                    includeSymbols
+                });
+                
+                const response = await fetch(`/api/ladybug/generate-password?${params}`);
+                const result = await response.json();
+                
+                if (result.success) {
+                    resultBox.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 15px;">
+                            <div style="background: #2d3748; color: #e2e8f0; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 1.2rem; margin-bottom: 10px;">
+                                ${result.data.password}
+                            </div>
+                            <button class="btn" onclick="copyToClipboard('${result.data.password}')">
+                                <i class="fas fa-copy"></i> Copy Password
+                            </button>
+                        </div>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    `;
+                    showNotification('Password generated successfully!');
+                } else {
+                    resultBox.innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+                    showNotification('Password generation failed: ' + result.error, 'error');
+                }
+                
+                resultBox.classList.add('show');
+            } catch (error) {
+                showNotification('Password generation error: ' + error.message, 'error');
+            }
+        }
 
-    // Navigation
-    navLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const pageId = link.getAttribute('data-page');
-        switchPage(pageId);
-        closeSidebar();
-      });
-    });
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Password copied to clipboard!');
+            }).catch(() => {
+                showNotification('Failed to copy password', 'error');
+            });
+        }
 
-    // API method change handler
-    apiMethodSelect.addEventListener('change', () => {
-      const requestBodyGroup = document.getElementById('request-body-group');
-      if (['GET', 'DELETE'].includes(apiMethodSelect.value)) {
-        requestBodyGroup.style.display = 'none';
-      } else {
-        requestBodyGroup.style.display = 'flex';
-      }
-    });
+        // Animate stats on page load
+        function animateStats() {
+            const stats = [
+                { id: 'apiCalls', target: 1234 },
+                { id: 'filesUploaded', target: 567 },
+                { id: 'ytDownloads', target: 89 },
+                { id: 'aiRequests', target: 234 }
+            ];
+            
+            stats.forEach(stat => {
+                const element = document.getElementById(stat.id);
+                let current = 0;
+                const increment = stat.target / 50;
+                
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= stat.target) {
+                        current = stat.target;
+                        clearInterval(timer);
+                    }
+                    element.textContent = Math.floor(current).toLocaleString();
+                }, 50);
+            });
+        }
 
-    // API Tester
-    testApiBtn.addEventListener('click', testAPI);
-    copyResponseBtn.addEventListener('click', () => {
-      copyToClipboard(responseContent.textContent);
-    });
-
-    // Examples
-    exampleSelect.addEventListener('change', loadExample);
-    runExampleBtn.addEventListener('click', runExample);
-    copyCodeBtn.addEventListener('click', () => {
-      copyToClipboard(codeExample.value);
-    });
-
-    // Playground
-    runPlaygroundBtn.addEventListener('click', runPlayground);
-    clearPlaygroundBtn.addEventListener('click', clearPlayground);
-
-    // Responsive handling
-    window.addEventListener('resize', () => {
-      if (window.innerWidth >= 992) {
-        closeSidebar();
-      }
-    });
-
-    // Make functions globally available for Turnstile
-    window.onTurnstileSuccess = onTurnstileSuccess;
-  </script>
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            animateStats();
+            
+            // Add some random variation to stats every 30 seconds
+            setInterval(() => {
+                const apiCalls = document.getElementById('apiCalls');
+                const current = parseInt(apiCalls.textContent.replace(/,/g, ''));
+                apiCalls.textContent = (current + Math.floor(Math.random() * 10)).toLocaleString();
+            }, 30000);
+        });
+    </script>
 </body>
 </html>
